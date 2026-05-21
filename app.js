@@ -49,11 +49,20 @@
     if (!state.recording) return;
     const now = performance.now();
     const t = (now - state.startMs) / 1000;
-    const a = e.accelerationIncludingGravity || {};
-    // If the device only exposes `acceleration` (gravity removed) and no
-    // gravity-included field, reconstruct by adding a nominal gravity later.
-    const gx = (a.x ?? null), gy = (a.y ?? null), gz = (a.z ?? null);
-    if (gx === null || gy === null || gz === null) return;
+    const aG = e.accelerationIncludingGravity;
+    const aN = e.acceleration;
+    let gx, gy, gz, source;
+    if (aG && aG.x !== null && aG.x !== undefined) {
+      gx = aG.x; gy = aG.y ?? 0; gz = aG.z ?? 0; source = "gIncl";
+    } else if (aN && aN.x !== null && aN.x !== undefined) {
+      // Some Android browsers expose only the gravity-removed channel.
+      // The user is instructed to place the phone flat on the floor,
+      // so gravity is along +Z in the device frame -> add 9.80665 to z.
+      gx = aN.x; gy = aN.y ?? 0; gz = (aN.z ?? 0) + 9.80665; source = "gSynth";
+    } else {
+      return;
+    }
+    state.lastSource = source;
     const rot = e.rotationRate || {};
     state.samples.push({
       t,
@@ -61,10 +70,10 @@
       rx: rot.alpha ?? 0, ry: rot.beta ?? 0, rz: rot.gamma ?? 0,
     });
 
-    // Live preview (cheap).
-    if (state.samples.length % 5 === 0) {
-      const n = state.samples.length;
-      liveCount.textContent = n;
+    // Live preview, updated every sample so the user can see data is flowing.
+    const n = state.samples.length;
+    liveCount.textContent = n;
+    if (n % 3 === 0) {
       liveAz.textContent = (gz || 0).toFixed(2);
       liveRate.textContent = (n / Math.max(t, 0.05)).toFixed(0);
     }
@@ -121,6 +130,8 @@
     state.samples = [];
     state.startMs = performance.now();
     state.recording = true;
+    state.lastSource = null;
+    clearError();
 
     window.addEventListener("devicemotion", onMotion);
 
@@ -129,6 +140,16 @@
     livePanel.classList.remove("hidden");
     stopBtn.disabled = false;
     startBtn.disabled = true;
+
+    // After 2 s with no samples, warn the inspector so they're not waiting in vain.
+    state.noDataTimer = setTimeout(() => {
+      if (state.recording && state.samples.length === 0) {
+        showLiveWarning(
+          "No sensor data has arrived yet. On iOS, make sure you tapped 'Allow' on the motion prompt. " +
+          "Open the page over HTTPS (e.g. the GitHub Pages URL) — motion sensors are blocked on plain HTTP."
+        );
+      }
+    }, 2000);
 
     // Live clock.
     state.clockTimer = setInterval(() => {
@@ -157,18 +178,60 @@
     state.recording = false;
     window.removeEventListener("devicemotion", onMotion);
     clearInterval(state.clockTimer);
+    clearTimeout(state.noDataTimer);
     stopBtn.disabled = true;
     startBtn.disabled = false;
+
+    if (state.samples.length < 20) {
+      livePanel.classList.add("hidden");
+      setupPanel.classList.remove("hidden");
+      showSetupError(
+        `Stop pressed but only ${state.samples.length} sensor sample(s) were captured. ` +
+        "The phone's motion sensors didn't produce data during the recording. " +
+        "Checklist: (1) open the app over HTTPS (the GitHub Pages URL — plain http:// is blocked on iOS); " +
+        "(2) on the first tap of Start, allow motion access when iOS prompts; " +
+        "(3) verify the device is a phone (desktop browsers usually don't expose DeviceMotion); " +
+        "(4) on Android, enable 'Motion sensors' for the site in Chrome's site settings."
+      );
+      return;
+    }
 
     try {
       runAnalysis();
     } catch (err) {
-      alert("Analysis failed: " + err.message);
-      console.error(err);
-      // Show setup again so the user can retry.
       livePanel.classList.add("hidden");
       setupPanel.classList.remove("hidden");
+      showSetupError("Analysis failed: " + err.message);
+      console.error(err);
     }
+  }
+
+  function showLiveWarning(msg) {
+    let el = document.getElementById("liveWarn");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "liveWarn";
+      el.className = "warn-banner";
+      livePanel.appendChild(el);
+    }
+    el.textContent = msg;
+  }
+
+  function showSetupError(msg) {
+    let el = document.getElementById("setupErr");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "setupErr";
+      el.className = "error-banner";
+      setupPanel.insertBefore(el, setupPanel.firstChild.nextSibling);
+    }
+    el.textContent = msg;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function clearError() {
+    const e1 = document.getElementById("setupErr"); if (e1) e1.remove();
+    const e2 = document.getElementById("liveWarn"); if (e2) e2.remove();
   }
 
   // ---------- Results rendering ----------
