@@ -416,9 +416,104 @@
     state.chart.chartSpectrum = chart;
   }
 
+  function makeRideProfileChart(result) {
+    const ctx = document.getElementById("chartProfile").getContext("2d");
+    const ds = downsample(result.t, result.vSigned);
+    const profile = result.rideProfile;
+
+    // Build vertical-line annotations at every internal phase boundary,
+    // and label them with the phase number (1-9).
+    const annotations = {};
+    if (profile && profile.phases.length) {
+      profile.phases.forEach((p, k) => {
+        const tx = p.t_start.toFixed(2);
+        annotations["phase" + k] = {
+          type: "line",
+          xMin: tx, xMax: tx,
+          borderColor: "rgba(91, 100, 115, 0.55)",
+          borderWidth: 1,
+          borderDash: [4, 4],
+          label: {
+            display: true,
+            content: String(p.num),
+            position: "start",
+            backgroundColor: "#0b3d91",
+            color: "#fff",
+            font: { weight: "bold", size: 10 },
+            padding: { x: 5, y: 2 },
+            borderRadius: 4,
+            yAdjust: -2,
+          },
+        };
+      });
+      // Final line at the end of the ride.
+      const last = profile.phases[profile.phases.length - 1];
+      const tx = last.t_end.toFixed(2);
+      annotations.phaseEnd = {
+        type: "line",
+        xMin: tx, xMax: tx,
+        borderColor: "rgba(91, 100, 115, 0.55)",
+        borderWidth: 1,
+        borderDash: [4, 4],
+      };
+    }
+
+    const chart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: ds.t.map(v => v.toFixed(2)),
+        datasets: [{
+          label: `Velocity (m/s) — ${result.kpi.direction}`,
+          data: ds.y,
+          borderColor: "#0b3d91",
+          backgroundColor: "rgba(11, 61, 145, 0.10)",
+          borderWidth: 1.8,
+          pointRadius: 0,
+          tension: 0.15,
+          fill: true,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+          legend: { display: true, position: "top" },
+          annotation: { annotations },
+        },
+        scales: {
+          x: { title: { display: true, text: "Time (s)" }, ticks: { maxTicksLimit: 12 } },
+          y: { title: { display: true, text: "Velocity (m/s)" }, beginAtZero: true },
+        },
+      },
+    });
+    state.chart.chartProfile = chart;
+  }
+
+  function renderPhaseTable(result) {
+    const tbody = document.querySelector("#phaseTable tbody");
+    tbody.innerHTML = "";
+    const profile = result.rideProfile;
+    if (!profile || !profile.phases.length) return;
+    profile.phases.forEach(p => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${p.num}</td>
+        <td>${p.label}</td>
+        <td>${p.t_start.toFixed(2)}</td>
+        <td>${p.duration_s.toFixed(2)}</td>
+        <td>${p.mean_acceleration_mps2.toFixed(3)}</td>
+        <td>${Math.abs(p.mean_velocity_mps).toFixed(3)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
   function renderCharts(result) {
     destroyCharts();
     const { t, aVert, velocity, displacement, jerk, aHoriz, spectrum } = result;
+    makeRideProfileChart(result);
+    renderPhaseTable(result);
     makeChart("chartAccel", "a_vertical (m/s²)", t, aVert,        "#0b3d91", "Acceleration (m/s²)");
     makeChart("chartVel",   "Velocity (m/s)",    t, velocity,     "#2e7d32", "Velocity (m/s)");
     makeChart("chartDisp",  "Displacement (m)",  t, displacement, "#ed6c02", "Displacement (m)");

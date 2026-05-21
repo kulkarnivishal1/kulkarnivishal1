@@ -317,6 +317,23 @@ body { padding-bottom: env(safe-area-inset-bottom, 0px); }
   height: 220px !important;
 }
 
+/* phase table (ride velocity profile) */
+.phase-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 10px;
+}
+.phase-table th, .phase-table td {
+  border-bottom: 1px solid var(--border);
+  padding: 6px 6px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.phase-table th { background: #f6f7fa; color: var(--primary-dark); text-transform: uppercase; letter-spacing: 0.4px; font-size: 11px; }
+.phase-table td:nth-child(1) { text-align: center; width: 28px; font-weight: 700; color: var(--primary-dark); }
+.phase-table td:nth-child(2) { text-align: left; }
+
 /* compliance table */
 .compliance {
   width: 100%;

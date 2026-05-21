@@ -161,6 +161,57 @@ function generatePdfReport(meta, result, charts) {
   doc.setTextColor(0, 0, 0);
   doc.setFont("helvetica", "normal");
 
+  // --- Ride profile phase table ---
+  if (result.rideProfile && result.rideProfile.phases.length) {
+    if (y > pageH - margin - 200) { doc.addPage(); y = margin; }
+    y += 20;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("Ride velocity profile — phase breakdown", margin, y);
+    y += 6;
+    doc.line(margin, y, pageW - margin, y);
+    y += 14;
+
+    const phaseCols = [
+      { label: "#",            x: margin,        w: 22,  align: "center" },
+      { label: "Phase",        x: margin + 22,   w: 180, align: "left"   },
+      { label: "Start (s)",    x: margin + 202,  w: 60,  align: "right"  },
+      { label: "Duration (s)", x: margin + 262,  w: 70,  align: "right"  },
+      { label: "Mean a (m/s²)",x: margin + 332,  w: 80,  align: "right"  },
+      { label: "Mean v (m/s)", x: margin + 412,  w: pageW - margin - (margin + 412), align: "right" },
+    ];
+    doc.setFontSize(9);
+    doc.setFillColor(240, 242, 247);
+    doc.rect(margin, y - 11, pageW - 2 * margin, 16, "F");
+    doc.setFont("helvetica", "bold");
+    phaseCols.forEach(c => {
+      const x = c.align === "right" ? c.x + c.w - 2 : (c.align === "center" ? c.x + c.w / 2 : c.x + 2);
+      doc.text(c.label, x, y, { align: c.align });
+    });
+    y += 4;
+    doc.setFont("helvetica", "normal");
+
+    result.rideProfile.phases.forEach(p => {
+      if (y > pageH - margin - 30) { doc.addPage(); y = margin; }
+      y += 13;
+      doc.setDrawColor(230);
+      doc.line(margin, y + 2, pageW - margin, y + 2);
+      const cells = [
+        String(p.num),
+        p.label,
+        fmt(p.t_start, 2),
+        fmt(p.duration_s, 2),
+        fmt(p.mean_acceleration_mps2, 3),
+        fmt(Math.abs(p.mean_velocity_mps), 3),
+      ];
+      cells.forEach((val, i) => {
+        const c = phaseCols[i];
+        const x = c.align === "right" ? c.x + c.w - 2 : (c.align === "center" ? c.x + c.w / 2 : c.x + 2);
+        doc.text(String(val), x, y, { align: c.align });
+      });
+    });
+  }
+
   // --- Graphs page(s) ---
   doc.addPage();
   y = margin;
@@ -174,6 +225,7 @@ function generatePdfReport(meta, result, charts) {
   y = 70;
 
   const chartList = [
+    { title: "Ride velocity profile (9-phase, EN 81)", id: "chartProfile" },
     { title: "Vertical acceleration vs time",   id: "chartAccel" },
     { title: "Velocity vs time",                 id: "chartVel" },
     { title: "Displacement vs time",             id: "chartDisp" },

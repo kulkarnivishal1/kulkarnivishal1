@@ -220,8 +220,94 @@ function topPeaks(freqs, mags, k = 3, minFreq = 0.5) {
 }
 
 /**
- * Phase analysis: identify acceleration / constant / deceleration phases.
+ * Detect the canonical 9-segment lift ride profile (matching the textbook
+ * diagram: pre-start, jerk-in accel, constant accel, jerk-out accel,
+ * constant velocity, jerk-in decel, constant decel, jerk-out decel,
+ * levelling/stop). Returns transition times and a labelled phase list.
+ *
+ *   aVertSigned : signed vertical acceleration (positive = motion in
+ *                 ride direction). For an UP ride this is +ve at start,
+ *                 -ve at end. For a DOWN ride the analyser flips the
+ *                 sign so the same logic applies.
+ *   velSigned   : signed velocity (always non-negative once flipped).
  */
+function detectRidePhases(t, aVertSigned, velSigned) {
+  const N = t.length;
+  if (N < 20) return { transitions: [], phases: [] };
+
+  const motion = 0.08;  // m/s² threshold for "the car is no longer at rest"
+  const plateau = 0.85; // fraction-of-peak used to delimit constant-accel band
+
+  // Locate the maximum acceleration (positive) in the first 60 % of the run
+  // and the maximum deceleration (negative) in the last 60 %.
+  const midA = Math.floor(N * 0.6);
+  const midD = Math.floor(N * 0.4);
+  let aPeakIdx = 0, aPeakVal = 0;
+  for (let i = 0; i < midA; i++) if (aVertSigned[i] > aPeakVal) { aPeakVal = aVertSigned[i]; aPeakIdx = i; }
+  let dPeakIdx = N - 1, dPeakVal = 0;
+  for (let i = midD; i < N; i++) if (aVertSigned[i] < dPeakVal) { dPeakVal = aVertSigned[i]; dPeakIdx = i; }
+
+  const aThresh = plateau * aPeakVal;
+  const dThresh = plateau * dPeakVal;
+
+  // Walk the signal to identify each transition. We clamp every index so
+  // that even partially-formed rides still yield a monotonic phase table.
+  const clamp = i => Math.max(0, Math.min(N - 1, i));
+
+  let i0 = 0; while (i0 < N && Math.abs(aVertSigned[i0]) < motion) i0++;
+  let i1 = i0; while (i1 < aPeakIdx && aVertSigned[i1] < aThresh) i1++;
+  let i2 = aPeakIdx; while (i2 < N && aVertSigned[i2] > aThresh) i2++;
+  let i3 = i2; while (i3 < N && aVertSigned[i3] > motion) i3++;
+  let i4 = i3; while (i4 < N && aVertSigned[i4] > -motion) i4++;
+  let i5 = i4; while (i5 < dPeakIdx && aVertSigned[i5] > dThresh) i5++;
+  let i6 = dPeakIdx; while (i6 < N && aVertSigned[i6] < dThresh) i6++;
+  let i7 = i6; while (i7 < N && aVertSigned[i7] < -motion) i7++;
+
+  const idx = [0, i0, i1, i2, i3, i4, i5, i6, i7, N - 1].map(clamp);
+  // Enforce strictly non-decreasing transitions in case the heuristic
+  // landed an out-of-order index on a noisy signal.
+  for (let k = 1; k < idx.length; k++) if (idx[k] < idx[k - 1]) idx[k] = idx[k - 1];
+
+  const meanV = (a, b) => {
+    if (b <= a) return 0;
+    let s = 0; for (let i = a; i <= b; i++) s += velSigned[i];
+    return s / (b - a + 1);
+  };
+  const meanA = (a, b) => {
+    if (b <= a) return 0;
+    let s = 0; for (let i = a; i <= b; i++) s += aVertSigned[i];
+    return s / (b - a + 1);
+  };
+
+  const labels = [
+    "Pre-start (at rest)",
+    "Acceleration jerk-in",
+    "Constant acceleration",
+    "Acceleration jerk-out",
+    "Constant velocity",
+    "Deceleration jerk-in",
+    "Constant deceleration",
+    "Deceleration jerk-out",
+    "Levelling / stop",
+  ];
+
+  const phases = [];
+  for (let k = 0; k < 9; k++) {
+    const a = idx[k], b = idx[k + 1];
+    phases.push({
+      num: k + 1,
+      label: labels[k],
+      i_start: a,
+      i_end: b,
+      t_start: t[a],
+      t_end: t[b],
+      duration_s: t[b] - t[a],
+      mean_velocity_mps: meanV(a, b),
+      mean_acceleration_mps2: meanA(a, b),
+    });
+  }
+  return { transitions: idx, phases };
+}
 function detectPhases(t, aVert, velocity, threshold = 0.15) {
   const accelMask = aVert.map(a => Math.abs(a) >= threshold);
   let accelStart = -1, accelEnd = -1, decelStart = -1, decelEnd = -1;
@@ -303,9 +389,19 @@ function analyseRide(samples) {
   // Phase detection.
   const phases = detectPhases(t, aVert, velocity, 0.15);
 
-  // Determine direction by net displacement.
+  // Determine direction by net displacement, then build sign-normalised
+  // velocity & acceleration so the ride-profile detector can use a single
+  // (always positive) reference.
   const netDisp = displacement[displacement.length - 1];
   const direction = netDisp >= 0 ? "UP" : "DOWN";
+  const sign = netDisp >= 0 ? 1 : -1;
+  const aSigned = new Float64Array(t.length);
+  const vSigned = new Float64Array(t.length);
+  for (let i = 0; i < t.length; i++) {
+    aSigned[i] = sign * aVert[i];
+    vSigned[i] = sign * velocity[i];
+  }
+  const rideProfile = detectRidePhases(t, aSigned, vSigned);
 
   // KPI computations.
   const maxAccel  = Math.max(...aVert);
@@ -371,9 +467,11 @@ function analyseRide(samples) {
 
   return {
     t, aVert, velocity, displacement, jerk, aHoriz,
+    aSigned, vSigned,
     samples,
     gravity,
     phases,
+    rideProfile,
     spectrum,
     kpi: {
       duration_s: durationS,
