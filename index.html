@@ -67,7 +67,6 @@
 
     <div class="actions">
       <button id="startBtn" class="primary big">Start recording</button>
-      <button id="stopBtn" class="danger big" disabled>Stop &amp; analyse</button>
     </div>
   </section>
 
@@ -84,6 +83,9 @@
       <div class="reading"><label>Samples</label><span id="liveCount">0</span></div>
     </div>
     <p class="hint">Keep the phone still on the floor &mdash; do not handle it during the ride.</p>
+    <div class="actions">
+      <button id="stopBtn" class="danger big">Stop &amp; analyse</button>
+    </div>
   </section>
 
   <!-- RESULTS PANEL -->
@@ -142,6 +144,8 @@
 <footer class="app-footer">
   Portal Lift Tester Software &middot; v1.0 &middot; Readings confirmed per EN&nbsp;81-20 / EN&nbsp;81-50.
 </footer>
+
+<button id="stopFloating" class="hidden" aria-label="Stop and analyse">STOP &amp; ANALYSE</button>
 
 <script src="analysis.js"></script>
 <script src="report.js"></script>

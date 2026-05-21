@@ -14,6 +14,7 @@
 
   const startBtn = $("#startBtn");
   const stopBtn  = $("#stopBtn");
+  const stopFloating = $("#stopFloating");
   const pdfBtn   = $("#pdfBtn");
   const csvBtn   = $("#csvBtn");
   const newBtn   = $("#newBtn");
@@ -138,6 +139,7 @@
     setupPanel.classList.add("hidden");
     resultsPanel.classList.add("hidden");
     livePanel.classList.remove("hidden");
+    stopFloating.classList.remove("hidden");
     stopBtn.disabled = false;
     startBtn.disabled = true;
 
@@ -159,14 +161,24 @@
       const d = String(Math.floor((t * 10) % 10));
       liveClock.textContent = `${mm}:${ss}.${d}`;
 
-      // Velocity estimate via cheap rolling integration of last 1s of vertical samples.
-      if (state.samples.length > 10) {
-        const tail = state.samples.slice(-Math.min(state.samples.length, 200));
+      // Rolling-window velocity estimate. We can't know the true gravity
+      // direction live (the phone may be tilted), so we centre the rolling
+      // window's vertical-axis mean to zero before integrating. This keeps
+      // the display sensible without claiming high accuracy.
+      if (state.samples.length > 20) {
+        const tail = state.samples.slice(-Math.min(state.samples.length, 120));
+        const gx0 = tail.reduce((s, x) => s + x.gx, 0) / tail.length;
+        const gy0 = tail.reduce((s, x) => s + x.gy, 0) / tail.length;
+        const gz0 = tail.reduce((s, x) => s + x.gz, 0) / tail.length;
+        const mag = Math.hypot(gx0, gy0, gz0) || 9.80665;
+        const ux = gx0 / mag, uy = gy0 / mag, uz = gz0 / mag;
         let v = 0;
         for (let i = 1; i < tail.length; i++) {
           const dt = tail[i].t - tail[i - 1].t;
-          const az = ((tail[i].gz + tail[i - 1].gz) / 2) - 9.80665;
-          v += az * dt;
+          const dotA = tail[i].gx * ux + tail[i].gy * uy + tail[i].gz * uz;
+          const dotB = tail[i - 1].gx * ux + tail[i - 1].gy * uy + tail[i - 1].gz * uz;
+          const aProj = -(((dotA + dotB) / 2) - mag);
+          v += aProj * dt;
         }
         liveVel.textContent = Math.abs(v).toFixed(2);
       }
@@ -181,6 +193,7 @@
     clearTimeout(state.noDataTimer);
     stopBtn.disabled = true;
     startBtn.disabled = false;
+    stopFloating.classList.add("hidden");
 
     if (state.samples.length < 20) {
       livePanel.classList.add("hidden");
@@ -474,6 +487,7 @@
 
   startBtn.addEventListener("click", startRecording);
   stopBtn.addEventListener("click", stopRecording);
+  stopFloating.addEventListener("click", stopRecording);
   pdfBtn.addEventListener("click", downloadPdf);
   csvBtn.addEventListener("click", downloadCsv);
   newBtn.addEventListener("click", newTest);

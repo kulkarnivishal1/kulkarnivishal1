@@ -157,6 +157,26 @@ button.big {
   font-size: 16px;
 }
 
+/* Floating Stop button — visible from anywhere during recording. */
+#stopFloating {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 50;
+  padding: 16px 30px;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  border: none;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(193,18,31,.4);
+}
+#stopFloating:active { transform: translateX(-50%) scale(0.97); }
+#stopFloating.hidden { display: none !important; }
+
 /* live */
 .rec-banner {
   display: flex;
