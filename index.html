@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#0b3d91" />
+<title>Portal Lift Tester Software</title>
+<link rel="stylesheet" href="styles.css" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%230b3d91'/><text x='32' y='44' font-size='40' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>P</text></svg>" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+<header class="app-header">
+  <div class="brand">
+    <div class="logo">P</div>
+    <div>
+      <h1>Portal Lift Tester Software</h1>
+      <p class="subtitle">Ride quality measurement &middot; EN&nbsp;81-20 / EN&nbsp;81-50</p>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <!-- SETUP PANEL -->
+  <section id="setupPanel" class="panel">
+    <h2>Test setup</h2>
+    <div class="grid">
+      <label>Site / Building
+        <input type="text" id="siteName" placeholder="e.g. Portal Tower A" />
+      </label>
+      <label>Lift / Car No.
+        <input type="text" id="liftId" placeholder="e.g. Lift-01" />
+      </label>
+      <label>Rated speed (m/s)
+        <input type="number" id="ratedSpeed" step="0.1" min="0" value="1.0" />
+      </label>
+      <label>Rated load (kg)
+        <input type="number" id="ratedLoad" step="1" min="0" value="630" />
+      </label>
+      <label>Travel direction
+        <select id="direction">
+          <option value="UP">UP</option>
+          <option value="DOWN">DOWN</option>
+        </select>
+      </label>
+      <label>Tester name
+        <input type="text" id="testerName" placeholder="Inspector / engineer" />
+      </label>
+    </div>
+
+    <div class="sensor-status" id="sensorStatus">
+      <span class="dot" id="sensorDot"></span>
+      <span id="sensorText">Sensors not initialised</span>
+    </div>
+
+    <div class="instructions">
+      <strong>Procedure</strong>
+      <ol>
+        <li>Place the phone <em>flat on the lift floor</em>, screen facing up, near the centre.</li>
+        <li>Tap <strong>Start</strong>. Wait for the &ldquo;Recording&rdquo; banner.</li>
+        <li>Initiate the lift ride (single floor-to-floor cycle).</li>
+        <li>When the car stops and doors begin to open, tap <strong>Stop</strong>.</li>
+        <li>Review parameters, graphs and download the PDF report.</li>
+      </ol>
+    </div>
+
+    <div class="actions">
+      <button id="startBtn" class="primary big">Start recording</button>
+      <button id="stopBtn" class="danger big" disabled>Stop &amp; analyse</button>
+    </div>
+  </section>
+
+  <!-- LIVE PANEL -->
+  <section id="livePanel" class="panel hidden">
+    <div class="rec-banner">
+      <span class="rec-dot"></span> RECORDING
+      <span class="live-clock" id="liveClock">00:00.0</span>
+    </div>
+    <div class="live-readings">
+      <div class="reading"><label>Sample rate</label><span id="liveRate">--</span> Hz</div>
+      <div class="reading"><label>|a| (vertical)</label><span id="liveAz">--</span> m/s&sup2;</div>
+      <div class="reading"><label>Velocity est.</label><span id="liveVel">--</span> m/s</div>
+      <div class="reading"><label>Samples</label><span id="liveCount">0</span></div>
+    </div>
+    <p class="hint">Keep the phone still on the floor &mdash; do not handle it during the ride.</p>
+  </section>
+
+  <!-- RESULTS PANEL -->
+  <section id="resultsPanel" class="panel hidden">
+    <div class="tabs">
+      <button class="tab active" data-tab="summary">Summary</button>
+      <button class="tab" data-tab="graphs">Graphs</button>
+      <button class="tab" data-tab="compliance">EN 81 Compliance</button>
+      <button class="tab" data-tab="raw">Data</button>
+    </div>
+
+    <!-- summary -->
+    <div class="tab-pane active" id="tab-summary">
+      <h2>Ride parameters</h2>
+      <div class="kpi-grid" id="kpiGrid"></div>
+      <div class="actions">
+        <button id="pdfBtn" class="primary">Download PDF report</button>
+        <button id="csvBtn">Download CSV (raw)</button>
+        <button id="newBtn" class="ghost">New test</button>
+      </div>
+    </div>
+
+    <!-- graphs -->
+    <div class="tab-pane" id="tab-graphs">
+      <div class="chart-card"><h3>Vertical acceleration (a&#x2098;) vs time</h3><canvas id="chartAccel"></canvas></div>
+      <div class="chart-card"><h3>Velocity vs time</h3><canvas id="chartVel"></canvas></div>
+      <div class="chart-card"><h3>Displacement vs time</h3><canvas id="chartDisp"></canvas></div>
+      <div class="chart-card"><h3>Jerk vs time</h3><canvas id="chartJerk"></canvas></div>
+      <div class="chart-card"><h3>Horizontal vibration (peak-to-peak window)</h3><canvas id="chartHoriz"></canvas></div>
+    </div>
+
+    <!-- compliance -->
+    <div class="tab-pane" id="tab-compliance">
+      <h2>EN&nbsp;81-20 / EN&nbsp;81-50 conformity</h2>
+      <p class="note">Acceptance limits are based on EN&nbsp;81-20 ride-quality clauses and ISO&nbsp;18738 measurement practice for passenger lifts. Values are advisory and must be confirmed by the responsible engineer.</p>
+      <table class="compliance" id="complianceTable">
+        <thead><tr><th>Parameter</th><th>Measured</th><th>Limit</th><th>Result</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <!-- raw -->
+    <div class="tab-pane" id="tab-raw">
+      <h2>Raw sensor data</h2>
+      <p>Total samples: <span id="rawCount">0</span> &middot; Mean sample rate: <span id="rawRate">0</span> Hz</p>
+      <p>Use <em>Download CSV</em> to export full time-series for offline analysis.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="app-footer">
+  Portal Lift Tester Software &middot; v1.0 &middot; Readings confirmed per EN&nbsp;81-20 / EN&nbsp;81-50.
+</footer>
+
+<script src="analysis.js"></script>
+<script src="report.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
