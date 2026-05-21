@@ -117,6 +117,109 @@ function slidingPeakToPeak(t, sig, startIdx, endIdx, windowSec = 1.0) {
 }
 
 /**
+ * Resample a non-uniformly sampled signal to a uniform grid via linear
+ * interpolation. Returns { fs, y } where fs is the resulting sample rate.
+ */
+function resampleUniform(t, y, startIdx, endIdx, targetFs) {
+  const t0 = t[startIdx];
+  const t1 = t[endIdx];
+  const dur = t1 - t0;
+  if (dur <= 0) return { fs: targetFs, y: new Float64Array(0) };
+  const N = Math.max(4, Math.floor(dur * targetFs));
+  const out = new Float64Array(N);
+  const dt = dur / (N - 1);
+  let j = startIdx;
+  for (let i = 0; i < N; i++) {
+    const tt = t0 + i * dt;
+    while (j < endIdx && t[j + 1] < tt) j++;
+    const t_a = t[j], t_b = t[j + 1];
+    const y_a = y[j], y_b = y[j + 1];
+    const w = (tt - t_a) / (t_b - t_a || 1e-9);
+    out[i] = y_a + w * (y_b - y_a);
+  }
+  return { fs: (N - 1) / dur, y: out };
+}
+
+/**
+ * In-place iterative radix-2 Cooley-Tukey FFT. Length must be a power of 2.
+ */
+function fftRadix2(re, im) {
+  const N = re.length;
+  for (let i = 1, j = 0; i < N; i++) {
+    let bit = N >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j) {
+      let tmp = re[i]; re[i] = re[j]; re[j] = tmp;
+      tmp = im[i]; im[i] = im[j]; im[j] = tmp;
+    }
+  }
+  for (let size = 2; size <= N; size <<= 1) {
+    const half = size >> 1;
+    const angStep = -2 * Math.PI / size;
+    for (let i = 0; i < N; i += size) {
+      for (let k = 0; k < half; k++) {
+        const ang = angStep * k;
+        const wRe = Math.cos(ang), wIm = Math.sin(ang);
+        const a = i + k, b = i + k + half;
+        const tRe = wRe * re[b] - wIm * im[b];
+        const tIm = wRe * im[b] + wIm * re[b];
+        re[b] = re[a] - tRe;
+        im[b] = im[a] - tIm;
+        re[a] += tRe;
+        im[a] += tIm;
+      }
+    }
+  }
+}
+
+/**
+ * One-sided amplitude spectrum (m/s² peak) of a real signal sampled at fs.
+ * Applies a Hann window and zero-pads to the next power of 2.
+ */
+function magnitudeSpectrum(signal, fs) {
+  const N0 = signal.length;
+  if (N0 < 8) return { freqs: new Float64Array(0), mags: new Float64Array(0) };
+  let N = 1; while (N < N0) N <<= 1;
+  const re = new Float64Array(N);
+  const im = new Float64Array(N);
+  let mean = 0;
+  for (let i = 0; i < N0; i++) mean += signal[i];
+  mean /= N0;
+  // Hann window + DC removal.
+  let winSum = 0;
+  for (let i = 0; i < N0; i++) {
+    const w = 0.5 * (1 - Math.cos(2 * Math.PI * i / (N0 - 1)));
+    re[i] = (signal[i] - mean) * w;
+    winSum += w;
+  }
+  fftRadix2(re, im);
+  const half = N / 2;
+  const freqs = new Float64Array(half);
+  const mags  = new Float64Array(half);
+  // Amplitude correction: divide by sum-of-window, multiply by 2 (one-sided).
+  const norm = 2 / (winSum || 1);
+  for (let k = 0; k < half; k++) {
+    freqs[k] = k * fs / N;
+    mags[k] = Math.hypot(re[k], im[k]) * norm;
+  }
+  return { freqs, mags };
+}
+
+/** Return the top-K local maxima of a magnitude spectrum above `minFreq`. */
+function topPeaks(freqs, mags, k = 3, minFreq = 0.5) {
+  const peaks = [];
+  for (let i = 1; i < mags.length - 1; i++) {
+    if (freqs[i] < minFreq) continue;
+    if (mags[i] > mags[i - 1] && mags[i] > mags[i + 1]) {
+      peaks.push({ f: freqs[i], m: mags[i] });
+    }
+  }
+  peaks.sort((a, b) => b.m - a.m);
+  return peaks.slice(0, k);
+}
+
+/**
  * Phase analysis: identify acceleration / constant / deceleration phases.
  */
 function detectPhases(t, aVert, velocity, threshold = 0.15) {
@@ -216,6 +319,8 @@ function analyseRide(samples) {
   const cv = findConstantVelocityWindow(t, aVert, 0.15);
   let vertVibPP = 0, vertVibA95 = 0, horizVibPP = 0, horizVibA95 = 0;
   let cvStartT = null, cvEndT = null;
+  let spectrum = null;
+  let dominantVert = [], dominantHoriz = [];
   if (cv) {
     cvStartT = t[cv.startIdx];
     cvEndT = t[cv.endIdx];
@@ -223,6 +328,29 @@ function analyseRide(samples) {
     const hor  = slidingPeakToPeak(t, aHoriz, cv.startIdx, cv.endIdx, 1.0);
     vertVibPP = vert.max; vertVibA95 = vert.a95;
     horizVibPP = hor.max; horizVibA95 = hor.a95;
+
+    // FFT spectrum over the constant-velocity plateau.
+    const targetFs = Math.max(50, Math.min(200, Math.round(1 / Math.max(dtMean, 1e-3))));
+    const rsV = resampleUniform(t, aVert,  cv.startIdx, cv.endIdx, targetFs);
+    const rsH = resampleUniform(t, aHoriz, cv.startIdx, cv.endIdx, targetFs);
+    if (rsV.y.length >= 32) {
+      const specV = magnitudeSpectrum(rsV.y, rsV.fs);
+      const specH = magnitudeSpectrum(rsH.y, rsH.fs);
+      // Truncate to the most useful range (0.5 .. 40 Hz) for lift mechanics.
+      const fMax = 40;
+      let cut = specV.freqs.length;
+      for (let i = 0; i < specV.freqs.length; i++) {
+        if (specV.freqs[i] > fMax) { cut = i; break; }
+      }
+      spectrum = {
+        fs: rsV.fs,
+        freqs: Array.from(specV.freqs.slice(0, cut)),
+        magsVert: Array.from(specV.mags.slice(0, cut)),
+        magsHoriz: Array.from(specH.mags.slice(0, cut)),
+      };
+      dominantVert  = topPeaks(specV.freqs.slice(0, cut), specV.mags.slice(0, cut), 3, 0.5);
+      dominantHoriz = topPeaks(specH.freqs.slice(0, cut), specH.mags.slice(0, cut), 3, 0.5);
+    }
   }
 
   // Acceleration / deceleration magnitudes.
@@ -246,6 +374,7 @@ function analyseRide(samples) {
     samples,
     gravity,
     phases,
+    spectrum,
     kpi: {
       duration_s: durationS,
       sample_rate_hz: sampleRate,
@@ -262,6 +391,8 @@ function analyseRide(samples) {
       horiz_vibration_a95_mps2: horizVibA95,
       constant_velocity_start_s: cvStartT,
       constant_velocity_end_s: cvEndT,
+      dominant_vert_hz: dominantVert,
+      dominant_horiz_hz: dominantHoriz,
     }
   };
 }

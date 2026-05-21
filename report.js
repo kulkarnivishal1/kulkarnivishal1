@@ -75,6 +75,9 @@ function generatePdfReport(meta, result, charts) {
   y += 14;
 
   const k = result.kpi;
+  const fmtPeaks = peaks => (peaks && peaks.length)
+    ? peaks.map(p => `${p.f.toFixed(1)} Hz`).join(", ")
+    : "—";
   const kpis = [
     ["Total ride duration",        `${fmt(k.duration_s, 2)} s`],
     ["Sample rate (mean)",         `${fmt(k.sample_rate_hz, 1)} Hz`],
@@ -88,6 +91,8 @@ function generatePdfReport(meta, result, charts) {
     ["Vertical vibration A95",     `${fmt(k.vert_vibration_a95_mps2, 3)} m/s²`],
     ["Horizontal vibration (P-P)", `${fmt(k.horiz_vibration_pp_mps2, 3)} m/s²`],
     ["Horizontal vibration A95",   `${fmt(k.horiz_vibration_a95_mps2, 3)} m/s²`],
+    ["Dominant vertical freq.",    fmtPeaks(k.dominant_vert_hz)],
+    ["Dominant horizontal freq.",  fmtPeaks(k.dominant_horiz_hz)],
   ];
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
@@ -174,6 +179,7 @@ function generatePdfReport(meta, result, charts) {
     { title: "Displacement vs time",             id: "chartDisp" },
     { title: "Jerk vs time",                     id: "chartJerk" },
     { title: "Horizontal vibration (peak-to-peak windowed)", id: "chartHoriz" },
+    { title: "Vibration spectrum (FFT, constant-velocity plateau)", id: "chartSpectrum" },
   ];
   const chartW = pageW - 2 * margin;
   const chartH = 160;

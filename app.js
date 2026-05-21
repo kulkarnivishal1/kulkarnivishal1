@@ -200,6 +200,9 @@
 
   function renderKPIs(result) {
     const k = result.kpi;
+    const fmtPeak = peaks => (peaks && peaks.length)
+      ? peaks.map(p => `${p.f.toFixed(1)} Hz`).join(", ")
+      : "—";
     const kpis = [
       { label: "Duration",                value: k.duration_s,              unit: "s",   d: 2 },
       { label: "Travel distance",         value: k.net_displacement_m,      unit: "m",   d: 2 },
@@ -209,6 +212,8 @@
       { label: "Max jerk",                value: k.max_jerk_mps3,           unit: "m/s³", d: 3, limit: 2.0 },
       { label: "Vert. vibration P-P",     value: k.vert_vibration_pp_mps2,  unit: "m/s²", d: 3, limit: 0.20 },
       { label: "Horiz. vibration P-P",    value: k.horiz_vibration_pp_mps2, unit: "m/s²", d: 3, limit: 0.15 },
+      { label: "Dominant vert. freq.",    value: fmtPeak(k.dominant_vert_hz),  unit: "", d: 0 },
+      { label: "Dominant horiz. freq.",   value: fmtPeak(k.dominant_horiz_hz), unit: "", d: 0 },
       { label: "Direction",               value: k.direction,               unit: "",     d: 0 },
       { label: "Sample rate",             value: k.sample_rate_hz,          unit: "Hz",   d: 1 },
     ];
@@ -295,14 +300,55 @@
     state.chart[canvasId] = chart;
   }
 
+  function makeSpectrumChart(spectrum) {
+    const note = document.getElementById("spectrumNote");
+    const ctx = document.getElementById("chartSpectrum").getContext("2d");
+    if (!spectrum) {
+      if (note) note.textContent = "No constant-velocity plateau detected — spectrum unavailable.";
+      const empty = new Chart(ctx, {
+        type: "line",
+        data: { labels: [], datasets: [] },
+        options: { responsive: true, maintainAspectRatio: false, animation: false },
+      });
+      state.chart.chartSpectrum = empty;
+      return;
+    }
+    if (note) {
+      note.textContent = `Plateau sample rate: ${spectrum.fs.toFixed(1)} Hz · resolution: ${(spectrum.fs / (spectrum.freqs.length * 2)).toFixed(2)} Hz`;
+    }
+    const labels = spectrum.freqs.map(f => f.toFixed(1));
+    const chart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels,
+        datasets: [
+          { label: "Vertical (m/s²)",   data: spectrum.magsVert,  borderColor: "#0b3d91", borderWidth: 1.2, pointRadius: 0, tension: 0.1, fill: false },
+          { label: "Horizontal (m/s²)", data: spectrum.magsHoriz, borderColor: "#5b21b6", borderWidth: 1.2, pointRadius: 0, tension: 0.1, fill: false },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: { legend: { display: true, position: "top" } },
+        scales: {
+          x: { title: { display: true, text: "Frequency (Hz)" }, ticks: { maxTicksLimit: 10 } },
+          y: { title: { display: true, text: "Amplitude (m/s²)" } },
+        },
+      },
+    });
+    state.chart.chartSpectrum = chart;
+  }
+
   function renderCharts(result) {
     destroyCharts();
-    const { t, aVert, velocity, displacement, jerk, aHoriz } = result;
+    const { t, aVert, velocity, displacement, jerk, aHoriz, spectrum } = result;
     makeChart("chartAccel", "a_vertical (m/s²)", t, aVert,        "#0b3d91", "Acceleration (m/s²)");
     makeChart("chartVel",   "Velocity (m/s)",    t, velocity,     "#2e7d32", "Velocity (m/s)");
     makeChart("chartDisp",  "Displacement (m)",  t, displacement, "#ed6c02", "Displacement (m)");
     makeChart("chartJerk",  "Jerk (m/s³)",       t, jerk,         "#c1121f", "Jerk (m/s³)");
     makeChart("chartHoriz", "|a_horizontal| (m/s²)", t, aHoriz,   "#5b21b6", "Horizontal accel (m/s²)");
+    makeSpectrumChart(spectrum);
   }
 
   // ---------- Exports ----------
