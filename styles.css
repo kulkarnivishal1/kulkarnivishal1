@@ -157,11 +157,12 @@ button.big {
   font-size: 16px;
 }
 
-/* Floating Stop button — visible from anywhere during recording. */
+/* Floating Stop button — visible from anywhere during recording.
+   bottom uses env(safe-area-inset-bottom) so it clears the iOS home indicator. */
 #stopFloating {
   position: fixed;
   left: 50%;
-  bottom: 18px;
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
   z-index: 50;
   padding: 16px 30px;
@@ -173,9 +174,16 @@ button.big {
   background: var(--danger);
   color: #fff;
   box-shadow: 0 6px 20px rgba(193,18,31,.4);
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
 }
 #stopFloating:active { transform: translateX(-50%) scale(0.97); }
 #stopFloating.hidden { display: none !important; }
+
+/* Make sure the bottom of the page can scroll past the floating Stop pill. */
+body { padding-bottom: env(safe-area-inset-bottom, 0px); }
+#livePanel { padding-bottom: 88px; }
 
 /* live */
 .rec-banner {
