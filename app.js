@@ -418,19 +418,29 @@
 
   function makeRideProfileChart(result) {
     const ctx = document.getElementById("chartProfile").getContext("2d");
-    const ds = downsample(result.t, result.vSigned);
     const profile = result.rideProfile;
+    const tArr = result.t, vArr = result.vSigned;
 
-    // Build vertical-line annotations at every internal phase boundary,
-    // and label them with the phase number (1-9).
+    // Downsample to {x, y} points so the x-axis can be linear (annotations
+    // land at exact times rather than snapping to category labels).
+    const maxPoints = 600;
+    const step = tArr.length <= maxPoints ? 1 : Math.ceil(tArr.length / maxPoints);
+    const lineData = [];
+    for (let i = 0; i < tArr.length; i += step) lineData.push({ x: tArr[i], y: vArr[i] });
+
     const annotations = {};
-    if (profile && profile.phases.length) {
-      profile.phases.forEach((p, k) => {
-        const tx = p.t_start.toFixed(2);
+    let peakV = 0;
+    for (const p of lineData) if (p.y > peakV) peakV = p.y;
+
+    if (profile && profile.phases.length === 9) {
+      const phases = profile.phases;
+
+      // Numbered phase boundary markers (1-9) at every phase start.
+      phases.forEach((p, k) => {
         annotations["phase" + k] = {
           type: "line",
-          xMin: tx, xMax: tx,
-          borderColor: "rgba(91, 100, 115, 0.55)",
+          xMin: p.t_start, xMax: p.t_start,
+          borderColor: "rgba(91, 100, 115, 0.5)",
           borderWidth: 1,
           borderDash: [4, 4],
           label: {
@@ -446,25 +456,91 @@
           },
         };
       });
-      // Final line at the end of the ride.
-      const last = profile.phases[profile.phases.length - 1];
-      const tx = last.t_end.toFixed(2);
+      const last = phases[phases.length - 1];
       annotations.phaseEnd = {
         type: "line",
-        xMin: tx, xMax: tx,
-        borderColor: "rgba(91, 100, 115, 0.55)",
+        xMin: last.t_end, xMax: last.t_end,
+        borderColor: "rgba(91, 100, 115, 0.5)",
         borderWidth: 1,
         borderDash: [4, 4],
+      };
+
+      // A / B / C / D — corner markers of the trapezoidal velocity envelope.
+      //   A = start of acceleration (motion command issued)
+      //   B = end of acceleration   (rated velocity reached)
+      //   C = start of deceleration (rated velocity ends)
+      //   D = end of deceleration   (car at rest)
+      const corners = [
+        { id: "A", t: phases[1].t_start, v: vArr[phases[1].i_start], yAdj:  22 },
+        { id: "B", t: phases[4].t_start, v: vArr[phases[4].i_start], yAdj: -22 },
+        { id: "C", t: phases[5].t_start, v: vArr[phases[5].i_start], yAdj: -22 },
+        { id: "D", t: phases[8].t_start, v: vArr[phases[8].i_start], yAdj:  22 },
+      ];
+      corners.forEach(c => {
+        annotations["point" + c.id] = {
+          type: "point",
+          xValue: c.t,
+          yValue: Math.max(0, c.v),
+          backgroundColor: "#ffb703",
+          borderColor: "#0b3d91",
+          borderWidth: 2,
+          radius: 5,
+        };
+        annotations["label" + c.id] = {
+          type: "label",
+          xValue: c.t,
+          yValue: Math.max(0, c.v),
+          content: [c.id],
+          color: "#082b66",
+          backgroundColor: "#ffb703",
+          font: { weight: "bold", size: 13 },
+          padding: 5,
+          borderRadius: 6,
+          borderColor: "#0b3d91",
+          borderWidth: 1.5,
+          yAdjust: c.yAdj,
+        };
+      });
+
+      // UP/DOWN direction indicator, centred above the constant-velocity plateau.
+      const midT = (phases[4].t_start + phases[5].t_start) / 2;
+      annotations.directionLabel = {
+        type: "label",
+        xValue: midT,
+        yValue: peakV,
+        content: [result.kpi.direction === "UP" ? "↑ UP" : "↓ DOWN"],
+        color: "#fff",
+        font: { weight: "bold", size: 14 },
+        backgroundColor: "rgba(46, 125, 50, 0.92)",
+        borderRadius: 6,
+        padding: 6,
+        yAdjust: -22,
+      };
+
+      // MOTOR label on the left side (vertical text), echoing the textbook diagram.
+      annotations.motorLabel = {
+        type: "label",
+        xValue: tArr[0],
+        yValue: peakV * 0.5,
+        content: ["MOTOR"],
+        color: "#082b66",
+        font: { weight: "bold", size: 11 },
+        backgroundColor: "rgba(255, 183, 3, 0.92)",
+        borderColor: "#0b3d91",
+        borderWidth: 1,
+        borderRadius: 4,
+        padding: 4,
+        rotation: -90,
+        xAdjust: 22,
       };
     }
 
     const chart = new Chart(ctx, {
       type: "line",
       data: {
-        labels: ds.t.map(v => v.toFixed(2)),
         datasets: [{
           label: `Velocity (m/s) — ${result.kpi.direction}`,
-          data: ds.y,
+          data: lineData,
           borderColor: "#0b3d91",
           backgroundColor: "rgba(11, 61, 145, 0.10)",
           borderWidth: 1.8,
@@ -482,7 +558,7 @@
           annotation: { annotations },
         },
         scales: {
-          x: { title: { display: true, text: "Time (s)" }, ticks: { maxTicksLimit: 12 } },
+          x: { type: "linear", title: { display: true, text: "Time (s)" }, ticks: { maxTicksLimit: 12 } },
           y: { title: { display: true, text: "Velocity (m/s)" }, beginAtZero: true },
         },
       },

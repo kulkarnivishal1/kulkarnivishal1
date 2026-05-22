@@ -7,7 +7,7 @@
 <meta http-equiv="Cache-Control" content="no-store" />
 <meta http-equiv="Pragma" content="no-cache" />
 <title>Portal Lift Tester Software</title>
-<link rel="stylesheet" href="styles.css?v=20250521f" />
+<link rel="stylesheet" href="styles.css?v=20250521g" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%230b3d91'/><text x='32' y='44' font-size='40' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>P</text></svg>" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
@@ -115,6 +115,7 @@
     <div class="tab-pane" id="tab-graphs">
       <div class="chart-card">
         <h3>Ride velocity profile (9-phase, EN 81)</h3>
+        <p class="note">Same diagram for UP or DOWN rides. Corners <strong>A</strong>&nbsp;= start of acceleration, <strong>B</strong>&nbsp;= rated velocity reached, <strong>C</strong>&nbsp;= deceleration starts, <strong>D</strong>&nbsp;= car at rest. Numbers 1&ndash;9 are the EN&nbsp;81 ride phases.</p>
         <canvas id="chartProfile"></canvas>
         <table class="phase-table" id="phaseTable">
           <thead><tr><th>#</th><th>Phase</th><th>Start (s)</th><th>Duration (s)</th><th>Mean a (m/s&sup2;)</th><th>Mean v (m/s)</th></tr></thead>
@@ -153,13 +154,13 @@
 </main>
 
 <footer class="app-footer">
-  Portal Lift Tester Software &middot; build&nbsp;20250521f &middot; Readings confirmed per EN&nbsp;81-20 / EN&nbsp;81-50.
+  Portal Lift Tester Software &middot; build&nbsp;20250521g &middot; Readings confirmed per EN&nbsp;81-20 / EN&nbsp;81-50.
 </footer>
 
 <button id="stopFloating" class="hidden" aria-label="Stop and analyse">STOP &amp; ANALYSE</button>
 
-<script src="analysis.js?v=20250521f"></script>
-<script src="report.js?v=20250521f"></script>
-<script src="app.js?v=20250521f"></script>
+<script src="analysis.js?v=20250521g"></script>
+<script src="report.js?v=20250521g"></script>
+<script src="app.js?v=20250521g"></script>
 </body>
 </html>
