@@ -258,9 +258,12 @@
       ratedSpeed: parseFloat($("#ratedSpeed").value) || null,
       ratedLoad: parseFloat($("#ratedLoad").value) || null,
       directionInput: $("#direction").value,
+      liftType: $("#liftType") ? $("#liftType").value : "hydraulic",
       timestamp: Date.now(),
     };
-    result.complianceRows = window.PortalAnalysis.buildComplianceRows(result.kpi, meta.ratedSpeed);
+    result.meta = meta;
+    result.complianceRows = window.PortalAnalysis.buildComplianceRows(result.kpi, meta.ratedSpeed, meta.liftType);
+    result.limits = window.PortalAnalysis.getAcceptanceLimits(meta.liftType);
     state.result = result;
     state.meta = meta;
 
@@ -276,18 +279,20 @@
 
   function renderKPIs(result) {
     const k = result.kpi;
+    const L = result.limits || window.PortalAnalysis.getAcceptanceLimits("hydraulic");
     const fmtPeak = peaks => (peaks && peaks.length)
       ? peaks.map(p => `${p.f.toFixed(1)} Hz`).join(", ")
       : "—";
     const kpis = [
+      { label: "Lift type",               value: (result.meta && result.meta.liftType) ? result.meta.liftType.toUpperCase() : "HYDRAULIC", unit: "", d: 0 },
       { label: "Duration",                value: k.duration_s,              unit: "s",   d: 2 },
       { label: "Travel distance",         value: k.net_displacement_m,      unit: "m",   d: 2 },
       { label: "Max velocity",            value: k.max_velocity_mps,        unit: "m/s", d: 3 },
-      { label: "Max acceleration",        value: k.max_acceleration_mps2,   unit: "m/s²", d: 3, limit: 1.5 },
-      { label: "Max deceleration",        value: k.max_deceleration_mps2,   unit: "m/s²", d: 3, limit: 1.5 },
-      { label: "Max jerk",                value: k.max_jerk_mps3,           unit: "m/s³", d: 3, limit: 2.0 },
-      { label: "Vert. vibration P-P",     value: k.vert_vibration_pp_mps2,  unit: "m/s²", d: 3, limit: 0.20 },
-      { label: "Horiz. vibration P-P",    value: k.horiz_vibration_pp_mps2, unit: "m/s²", d: 3, limit: 0.15 },
+      { label: "Max acceleration",        value: k.max_acceleration_mps2,   unit: "m/s²", d: 3, limit: L.maxAccel },
+      { label: "Max deceleration",        value: k.max_deceleration_mps2,   unit: "m/s²", d: 3, limit: L.maxDecel },
+      { label: "Max jerk",                value: k.max_jerk_mps3,           unit: "m/s³", d: 3, limit: L.maxJerk },
+      { label: "Vert. vibration P-P",     value: k.vert_vibration_pp_mps2,  unit: "m/s²", d: 3, limit: L.vertPP },
+      { label: "Horiz. vibration P-P",    value: k.horiz_vibration_pp_mps2, unit: "m/s²", d: 3, limit: L.horizPP },
       { label: "Dominant vert. freq.",    value: fmtPeak(k.dominant_vert_hz),  unit: "", d: 0 },
       { label: "Dominant horiz. freq.",   value: fmtPeak(k.dominant_horiz_hz), unit: "", d: 0 },
       { label: "Direction",               value: k.direction,               unit: "",     d: 0 },

@@ -29,7 +29,8 @@ function generatePdfReport(meta, result, charts) {
   doc.text("Portal Lift Tester Software", margin, 32);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(11);
-  doc.text("Ride quality test report — EN 81-20 / EN 81-50", margin, 52);
+  const liftTypeLabel = (meta.liftType === "traction") ? "Traction lift" : "Hydraulic lift";
+  doc.text(`Ride quality test report — ${liftTypeLabel} — EN 81-20 / EN 81-50`, margin, 52);
 
   y = 90;
   doc.setTextColor(0, 0, 0);
@@ -46,6 +47,7 @@ function generatePdfReport(meta, result, charts) {
   const details = [
     ["Site / Building",   meta.site || "—"],
     ["Lift / Car ID",     meta.liftId || "—"],
+    ["Lift type",         liftTypeLabel],
     ["Tester",            meta.tester || "—"],
     ["Date & time",       new Date(meta.timestamp).toLocaleString()],
     ["Rated speed",       meta.ratedSpeed ? `${meta.ratedSpeed} m/s` : "—"],

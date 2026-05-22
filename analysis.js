@@ -496,10 +496,44 @@ function analyseRide(samples) {
 }
 
 /**
- * EN 81-20 / ISO 18738 acceptance limits for passenger lifts.
- * Returns one row per parameter for the compliance table.
+ * EN 81-20 / ISO 18738 acceptance limits.
+ *
+ * `liftType` is "hydraulic" or "traction". Hydraulic lifts run at lower
+ * speeds and are normally specified to tighter acceleration / jerk limits
+ * for ride comfort; vibration limits per ISO 18738 are the same for both.
  */
-function buildComplianceRows(kpi, ratedSpeed) {
+function getAcceptanceLimits(liftType = "hydraulic") {
+  if (liftType === "hydraulic") {
+    return {
+      maxAccel: 1.0,
+      maxDecel: 1.0,
+      maxJerk:  1.3,
+      vertPP:   0.20,
+      vertA95:  0.15,
+      horizPP:  0.15,
+      horizA95: 0.12,
+      ratedSpeedCap: 1.0,
+      maxAccelRef: "EN 81-20 §5.12.1.3 (hydraulic, ≤ 1.0 m/s²)",
+      maxJerkRef:  "ISO 18738 / hydraulic comfort (≤ 1.3 m/s³)",
+    };
+  }
+  // traction
+  return {
+    maxAccel: 1.5,
+    maxDecel: 1.5,
+    maxJerk:  2.0,
+    vertPP:   0.20,
+    vertA95:  0.15,
+    horizPP:  0.15,
+    horizA95: 0.12,
+    ratedSpeedCap: null,
+    maxAccelRef: "EN 81-20 §5.12.1.3 (traction, ≤ 1.5 m/s²)",
+    maxJerkRef:  "ISO 18738 comfort (≤ 2.0 m/s³)",
+  };
+}
+
+function buildComplianceRows(kpi, ratedSpeed, liftType = "hydraulic") {
+  const L = getAcceptanceLimits(liftType);
   const rows = [];
   const add = (name, measured, unit, limit, comparator, ref) => {
     let result = "INFO", cls = "info";
@@ -511,41 +545,37 @@ function buildComplianceRows(kpi, ratedSpeed) {
     rows.push({ name, measured, unit, limit, result, cls, ref });
   };
 
-  // Max acceleration (EN 81-20 5.12.1.3): <= 1.5 m/s^2 nominal, hard limit per emergency stops.
-  add("Maximum acceleration", kpi.max_acceleration_mps2, "m/s²", 1.5,
-      (m, l) => m <= l, "EN 81-20 §5.12.1.3");
-  add("Maximum deceleration", kpi.max_deceleration_mps2, "m/s²", 1.5,
-      (m, l) => m <= l, "EN 81-20 §5.12.1.3");
+  add("Maximum acceleration", kpi.max_acceleration_mps2, "m/s²", L.maxAccel,
+      (m, l) => m <= l, L.maxAccelRef);
+  add("Maximum deceleration", kpi.max_deceleration_mps2, "m/s²", L.maxDecel,
+      (m, l) => m <= l, L.maxAccelRef);
+  add("Maximum jerk",         kpi.max_jerk_mps3,          "m/s³", L.maxJerk,
+      (m, l) => m <= l, L.maxJerkRef);
 
-  // Max jerk (commonly accepted comfort criterion, EN 81 informative / ISO 18738).
-  add("Maximum jerk", kpi.max_jerk_mps3, "m/s³", 2.0,
-      (m, l) => m <= l, "ISO 18738 (comfort)");
-
-  // Vertical vibration peak-to-peak during constant velocity (ISO 18738 < 0.20 m/s^2 PP).
-  add("Vertical vibration (peak-to-peak)", kpi.vert_vibration_pp_mps2, "m/s²", 0.20,
+  add("Vertical vibration (peak-to-peak)", kpi.vert_vibration_pp_mps2, "m/s²", L.vertPP,
       (m, l) => m <= l, "ISO 18738");
-  add("Vertical vibration A95", kpi.vert_vibration_a95_mps2, "m/s²", 0.15,
+  add("Vertical vibration A95",            kpi.vert_vibration_a95_mps2, "m/s²", L.vertA95,
       (m, l) => m <= l, "ISO 18738");
-
-  // Horizontal vibration peak-to-peak (ISO 18738 < 0.15 m/s^2 PP).
-  add("Horizontal vibration (peak-to-peak)", kpi.horiz_vibration_pp_mps2, "m/s²", 0.15,
+  add("Horizontal vibration (peak-to-peak)", kpi.horiz_vibration_pp_mps2, "m/s²", L.horizPP,
       (m, l) => m <= l, "ISO 18738");
-  add("Horizontal vibration A95", kpi.horiz_vibration_a95_mps2, "m/s²", 0.12,
+  add("Horizontal vibration A95",            kpi.horiz_vibration_a95_mps2, "m/s²", L.horizA95,
       (m, l) => m <= l, "ISO 18738");
 
-  // Rated speed conformity (within ±5% of rated, EN 81-20 §5.12.1.1).
   if (ratedSpeed && ratedSpeed > 0) {
     const dev = Math.abs(kpi.max_velocity_mps - ratedSpeed) / ratedSpeed;
     add("Speed conformity vs rated", dev * 100, "%", 5.0,
-        (m, l) => m <= l, "EN 81-20 §5.12.1.1 (±5%)");
+        (m, l) => m <= l, "EN 81-20 §5.12.1.1 (±5 %)");
+  }
+  if (liftType === "hydraulic" && L.ratedSpeedCap !== null) {
+    add("Rated-speed cap (hydraulic)", kpi.max_velocity_mps, "m/s", L.ratedSpeedCap,
+        (m, l) => m <= l, "EN 81-20 (hydraulic ≤ 1.0 m/s)");
   }
 
-  // Net travel distance and duration are informational.
   add("Travel distance (measured)", kpi.net_displacement_m, "m", null, null, "Informational");
-  add("Total ride duration", kpi.duration_s, "s", null, null, "Informational");
-  add("Mean sample rate", kpi.sample_rate_hz, "Hz", null, null, "Informational");
+  add("Total ride duration",        kpi.duration_s,        "s", null, null, "Informational");
+  add("Mean sample rate",           kpi.sample_rate_hz,   "Hz", null, null, "Informational");
 
   return rows;
 }
 
-window.PortalAnalysis = { analyseRide, buildComplianceRows, G_STANDARD };
+window.PortalAnalysis = { analyseRide, buildComplianceRows, getAcceptanceLimits, G_STANDARD };
