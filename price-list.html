@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#0b3d91" />
+<title>Elevator Cabin Price List — Portal Lift</title>
+<style>
+:root {
+  --primary: #0b3d91;
+  --primary-dark: #082b66;
+  --accent: #ffb703;
+  --accent2: #e65c00;
+  --ok: #2e7d32;
+  --bg: #f3f5f9;
+  --card: #ffffff;
+  --text: #1a1f2c;
+  --muted: #5b6473;
+  --border: #d8dde6;
+  --highlight: #e8f0fe;
+  --popular: #1a73e8;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;}
+
+/* ── Header ── */
+.app-header{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;padding:16px 20px;position:sticky;top:0;z-index:10;box-shadow:0 2px 10px rgba(0,0,0,0.12);}
+.brand{display:flex;align-items:center;gap:14px;}
+.logo{width:44px;height:44px;background:var(--accent);color:var(--primary-dark);font-weight:800;font-size:26px;border-radius:10px;display:grid;place-items:center;flex-shrink:0;}
+.app-header h1{font-size:18px;letter-spacing:0.2px;}
+.subtitle{font-size:12px;opacity:0.85;margin-top:2px;}
+.header-nav{margin-left:auto;display:flex;gap:10px;align-items:center;}
+.header-nav a{color:rgba(255,255,255,0.85);font-size:13px;text-decoration:none;padding:6px 12px;border:1px solid rgba(255,255,255,0.3);border-radius:20px;}
+.header-nav a:hover{background:rgba(255,255,255,0.15);}
+
+/* ── Layout ── */
+.container{max-width:1100px;margin:0 auto;padding:20px 16px 40px;}
+
+/* ── Hero band ── */
+.hero{background:linear-gradient(135deg,#0b3d91 0%,#1565c0 60%,#1976d2 100%);color:#fff;border-radius:16px;padding:28px 28px 24px;margin-bottom:24px;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;right:-40px;top:-40px;width:200px;height:200px;background:rgba(255,255,255,0.06);border-radius:50%;}
+.hero::after{content:'';position:absolute;right:40px;bottom:-60px;width:260px;height:260px;background:rgba(255,255,255,0.04);border-radius:50%;}
+.hero h2{font-size:22px;font-weight:700;margin-bottom:6px;}
+.hero p{font-size:14px;opacity:0.9;max-width:600px;line-height:1.55;}
+.hero-meta{display:flex;flex-wrap:wrap;gap:16px;margin-top:18px;}
+.hero-badge{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;}
+
+/* ── Section title ── */
+.section-title{font-size:15px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:0.8px;margin:28px 0 14px;display:flex;align-items:center;gap:8px;}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* ── Cabin type cards ── */
+.cabin-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:28px;}
+.cabin-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.05);transition:box-shadow 0.2s;}
+.cabin-card:hover{box-shadow:0 4px 16px rgba(0,0,0,0.10);}
+.cabin-card.popular{border-color:var(--popular);border-width:2px;}
+.card-header{padding:14px 16px 10px;border-bottom:1px solid var(--border);position:relative;}
+.card-header h3{font-size:14px;font-weight:700;color:var(--text);}
+.popular-badge{position:absolute;top:10px;right:12px;background:var(--popular);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:0.5px;}
+.card-icon{font-size:28px;margin-bottom:6px;line-height:1;}
+.card-prices{padding:14px 16px;}
+.price-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--border);}
+.price-row:last-child{border-bottom:none;}
+.pax-label{font-size:12px;color:var(--muted);font-weight:600;}
+.price-val{font-size:16px;font-weight:700;color:var(--primary);}
+.price-gst{font-size:10px;color:var(--muted);text-align:right;line-height:1.3;}
+.card-specs{padding:10px 16px 14px;background:#fafbfd;border-top:1px solid var(--border);}
+.card-specs ul{list-style:none;padding:0;}
+.card-specs li{font-size:12px;color:var(--muted);padding:2px 0;display:flex;gap:6px;align-items:flex-start;}
+.card-specs li::before{content:'✓';color:var(--ok);font-weight:700;flex-shrink:0;margin-top:1px;}
+
+/* ── Master price table ── */
+.table-wrap{overflow-x:auto;background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead tr{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;}
+thead th{padding:13px 16px;text-align:left;font-weight:600;white-space:nowrap;}
+thead th.num{text-align:right;}
+tbody tr{border-bottom:1px solid var(--border);}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:var(--highlight);}
+tbody td{padding:12px 16px;vertical-align:middle;}
+tbody td.num{text-align:right;font-weight:700;color:var(--primary);font-size:14px;}
+tbody td.type-name{font-weight:600;}
+tbody td.type-desc{color:var(--muted);font-size:12px;}
+.pop-row{background:linear-gradient(90deg,#e8f0fe 0%,#ffffff 100%);}
+.pop-row td.type-name::after{content:' ★';color:var(--popular);font-size:11px;}
+tfoot td{background:#f3f5f9;font-size:11px;color:var(--muted);padding:10px 16px;}
+
+/* ── GST callout ── */
+.gst-box{background:linear-gradient(135deg,#fff3e0,#fff8e1);border:1px solid #ffcc02;border-radius:12px;padding:14px 18px;margin:20px 0;display:flex;gap:12px;align-items:flex-start;}
+.gst-icon{font-size:22px;flex-shrink:0;}
+.gst-box p{font-size:13px;color:#5d4037;line-height:1.5;}
+.gst-box strong{color:#bf6000;}
+
+/* ── Spec comparison ── */
+.spec-table-wrap{overflow-x:auto;background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 1px 3px rgba(0,0,0,0.05);margin-bottom:20px;}
+.spec-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.spec-table thead tr{background:var(--primary);color:#fff;}
+.spec-table thead th{padding:11px 14px;font-weight:600;white-space:nowrap;text-align:center;}
+.spec-table thead th:first-child{text-align:left;}
+.spec-table tbody tr{border-bottom:1px solid var(--border);}
+.spec-table tbody tr:last-child{border-bottom:none;}
+.spec-table tbody tr:hover{background:var(--highlight);}
+.spec-table td{padding:10px 14px;text-align:center;color:var(--muted);}
+.spec-table td:first-child{text-align:left;color:var(--text);font-weight:600;}
+.yes{color:var(--ok);font-weight:700;}
+.no{color:#bbb;}
+.opt{color:var(--accent2);font-weight:600;}
+
+/* ── Dimension table ── */
+.dim-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px;}
+.dim-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+.dim-card .pax-big{font-size:32px;font-weight:800;color:var(--primary);}
+.dim-card .pax-label{font-size:12px;color:var(--muted);margin-bottom:10px;}
+.dim-card .dim-line{font-size:13px;padding:4px 0;border-bottom:1px dashed var(--border);}
+.dim-card .dim-line:last-child{border:none;}
+.dim-card .dim-key{color:var(--muted);font-size:11px;}
+
+/* ── Terms ── */
+.terms{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;font-size:12.5px;color:var(--muted);line-height:1.7;}
+.terms h4{color:var(--text);font-size:13px;margin-bottom:8px;}
+.terms ol{padding-left:18px;}
+.terms li{margin-bottom:4px;}
+
+/* ── Print button ── */
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin:20px 0;}
+.btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;border:none;padding:11px 22px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;}
+.btn-secondary{background:var(--card);color:var(--primary);border:2px solid var(--primary);padding:9px 20px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;}
+.btn-primary:hover{opacity:0.9;}
+.btn-secondary:hover{background:var(--highlight);}
+
+/* ── Footer ── */
+.app-footer{background:var(--card);border-top:1px solid var(--border);padding:14px 20px;text-align:center;font-size:12px;color:var(--muted);}
+
+/* ── Print styles ── */
+@media print {
+  .app-header .header-nav,.actions,.app-footer{display:none!important;}
+  .app-header{position:static!important;background:none!important;color:#000!important;box-shadow:none!important;}
+  .brand{gap:8px;}
+  .logo{background:#ddd!important;color:#000!important;}
+  .hero{background:#f0f0f0!important;color:#000!important;border-radius:8px;}
+  body,html{background:#fff!important;}
+  .container{padding:8px;}
+  .cabin-cards{grid-template-columns:repeat(3,1fr);}
+  .dim-cards{grid-template-columns:repeat(3,1fr);}
+  .cabin-card,.dim-card,.table-wrap{box-shadow:none!important;border:1px solid #ccc!important;}
+  .page-break{page-break-before:always;}
+}
+
+@media(max-width:600px){
+  .dim-cards{grid-template-columns:1fr;}
+  .cabin-cards{grid-template-columns:1fr;}
+  thead th{padding:10px 10px;font-size:12px;}
+  tbody td{padding:10px 10px;font-size:12px;}
+  tbody td.num{font-size:13px;}
+}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand">
+    <div class="logo">P</div>
+    <div>
+      <h1>Portal Lift &mdash; Elevator Cabin Price List</h1>
+      <p class="subtitle">Cabin supply &middot; Ex-works &middot; Effective May&nbsp;2025</p>
+    </div>
+    <nav class="header-nav">
+      <a href="index.html">&#8592; Back to Tester</a>
+      <a href="#" onclick="window.print();return false;">&#128438; Print / PDF</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- Hero -->
+  <div class="hero">
+    <h2>Elevator Cabin Pricing &mdash; 2025 Edition</h2>
+    <p>Competitive ex-works pricing for passenger elevator cabins in 6 finish categories and 3 standard capacities. All cabins comply with IS&nbsp;14665 / EN&nbsp;81-20 dimensional and safety requirements. Prices are valid for standard car sizes listed below.</p>
+    <div class="hero-meta">
+      <span class="hero-badge">4 &middot; 6 &middot; 8 Passenger</span>
+      <span class="hero-badge">6 Finish Types</span>
+      <span class="hero-badge">IS 14665 / EN 81-20</span>
+      <span class="hero-badge">Ex-Works &bull; Excl. GST</span>
+      <span class="hero-badge">Valid Till: 31 Aug 2025</span>
+    </div>
+  </div>
+
+  <!-- GST Note -->
+  <div class="gst-box">
+    <span class="gst-icon">&#9432;</span>
+    <p><strong>GST &amp; Tax Note:</strong> All prices listed are <strong>ex-works and exclusive of GST (18%)</strong>. Freight, installation, AMC, and accessories (flooring, false ceiling, COP/LOP panels) are quoted separately. Prices are subject to revision based on raw-material fluctuation beyond ±8%. Quote validity: 30 days from date of issue.</p>
+  </div>
+
+  <!-- Standard Dimensions -->
+  <div class="section-title">Standard Cabin Dimensions</div>
+  <div class="dim-cards">
+    <div class="dim-card">
+      <div class="pax-big">4</div>
+      <div class="pax-label">Passenger &bull; 320 kg</div>
+      <div class="dim-line"><span class="dim-key">Internal (W&times;D):</span> 1000 &times; 1000 mm</div>
+      <div class="dim-line"><span class="dim-key">Clear Height:</span> 2100 mm</div>
+      <div class="dim-line"><span class="dim-key">Door Opening:</span> 800 &times; 2000 mm</div>
+      <div class="dim-line"><span class="dim-key">Shaft W&times;D:</span> 1600 &times; 1600 mm (typ.)</div>
+    </div>
+    <div class="dim-card">
+      <div class="pax-big">6</div>
+      <div class="pax-label">Passenger &bull; 480 kg</div>
+      <div class="dim-line"><span class="dim-key">Internal (W&times;D):</span> 1100 &times; 1400 mm</div>
+      <div class="dim-line"><span class="dim-key">Clear Height:</span> 2200 mm</div>
+      <div class="dim-line"><span class="dim-key">Door Opening:</span> 900 &times; 2000 mm</div>
+      <div class="dim-line"><span class="dim-key">Shaft W&times;D:</span> 1700 &times; 1900 mm (typ.)</div>
+    </div>
+    <div class="dim-card">
+      <div class="pax-big">8</div>
+      <div class="pax-label">Passenger &bull; 630 kg</div>
+      <div class="dim-line"><span class="dim-key">Internal (W&times;D):</span> 1400 &times; 1600 mm</div>
+      <div class="dim-line"><span class="dim-key">Clear Height:</span> 2200 mm</div>
+      <div class="dim-line"><span class="dim-key">Door Opening:</span> 900 &times; 2000 mm</div>
+      <div class="dim-line"><span class="dim-key">Shaft W&times;D:</span> 2000 &times; 2100 mm (typ.)</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- MASTER PRICE TABLE -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="section-title">Master Price Table (&#8377; Ex-Works, Excl. GST)</div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:30px">#</th>
+          <th>Cabin Type</th>
+          <th>Description</th>
+          <th class="num">4 Pax<br><small style="font-weight:400;opacity:0.8">320 kg</small></th>
+          <th class="num">6 Pax<br><small style="font-weight:400;opacity:0.8">480 kg</small></th>
+          <th class="num">8 Pax<br><small style="font-weight:400;opacity:0.8">630 kg</small></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td class="type-name">MS Powder Coated</td>
+          <td class="type-desc">Mild steel structure &amp; panels, polyester powder coat finish, integrated LED light pelmet, SS door surround</td>
+          <td class="num">&#8377;&nbsp;82,000</td>
+          <td class="num">&#8377; 1,05,000</td>
+          <td class="num">&#8377; 1,35,000</td>
+        </tr>
+        <tr class="pop-row">
+          <td>2</td>
+          <td class="type-name">SS Hairline &mdash; Half Mirror &amp; Handrail</td>
+          <td class="type-desc">304 SS hairline 3 walls, rear half-mirror panel (3&ndash;6 mm toughened), 38mm dia. round SS handrail, LED pelmet</td>
+          <td class="num">&#8377; 1,24,000</td>
+          <td class="num">&#8377; 1,60,000</td>
+          <td class="num">&#8377; 2,06,000</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td class="type-name">SS Hairline &mdash; Designer Sheet Panels</td>
+          <td class="type-desc">304 SS hairline 3 walls, designer colour-coated / geometric embossed SS panel inserts, SS handrail, LED pelmet</td>
+          <td class="num">&#8377; 1,42,000</td>
+          <td class="num">&#8377; 1,84,000</td>
+          <td class="num">&#8377; 2,36,000</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td class="type-name">Full Designer Sheet</td>
+          <td class="type-desc">All 3 walls in premium designer panels (HPL / colour SS / wood-grain SS laminate), SS skirting, LED pelmet, SS handrail</td>
+          <td class="num">&#8377; 1,62,000</td>
+          <td class="num">&#8377; 2,10,000</td>
+          <td class="num">&#8377; 2,70,000</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td class="type-name">1 Side Glass &mdash; Designer Sheet Panels</td>
+          <td class="type-desc">One side wall: 10 mm toughened clear/bronze glass with SS framing; remaining walls in designer sheet; LED pelmet, SS handrail</td>
+          <td class="num">&#8377; 1,88,000</td>
+          <td class="num">&#8377; 2,44,000</td>
+          <td class="num">&#8377; 3,12,000</td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td class="type-name">2 Side Glass &mdash; Designer Sheet Panels</td>
+          <td class="type-desc">Both side walls: 10 mm toughened clear/bronze glass with SS framing; rear in designer sheet; panoramic effect, SS handrail, LED pelmet</td>
+          <td class="num">&#8377; 2,24,000</td>
+          <td class="num">&#8377; 2,90,000</td>
+          <td class="num">&#8377; 3,72,000</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="6">&#9733; Most popular choice &bull; All prices in Indian Rupees (INR) &bull; Ex-works, Pune &bull; Excluding GST @18% &bull; Valid May–Aug 2025 &bull; Custom sizes on request (+8–15% surcharge)</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="actions">
+    <button class="btn-primary" onclick="window.print()">&#128438;&nbsp; Print / Save as PDF</button>
+    <button class="btn-secondary" onclick="copyPrices()">&#128203;&nbsp; Copy Price Summary</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- CABIN TYPE CARDS -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="section-title page-break">Cabin Type Details</div>
+  <div class="cabin-cards">
+
+    <!-- 1. MS Powder Coated -->
+    <div class="cabin-card">
+      <div class="card-header">
+        <div class="card-icon">🏗️</div>
+        <h3>MS Powder Coated</h3>
+      </div>
+      <div class="card-prices">
+        <div class="price-row">
+          <span class="pax-label">4 Passenger (320 kg)</span>
+          <div><div class="price-val">&#8377; 82,000</div><div class="price-gst">+ GST &#8377; 14,760<br>Total &#8377; 96,760</div></div>
+        </div>
+        <div class="price-row">
+          <span class="pax-label">6 Passenger (480 kg)</span>
+          <div><div class="price-val">&#8377; 1,05,000</div><div class="price-gst">+ GST &#8377; 18,900<br>Total &#8377; 1,23,900</div></div>
+        </div>
+        <div class="price-row">
+          <span class="pax-label">8 Passenger (630 kg)</span>
+          <div><div class="price-val">&#8377; 1,35,000</div><div class="price-gst">+ GST &#8377; 24,300<br>Total &#8377; 1,59,300</div></div>
+        </div>
+      </div>
+      <div class="card-specs">
+        <ul>
+          <li>1.5 mm CR MS sheet structure &amp; panels</li>
+          <li>Epoxy primer + polyester powder coat</li>
+          <li>SS 304 door surround / jamb</li>
+          <li>Recessed LED light pelmet</li>
+          <li>MS false ceiling with LED strip</li>
+          <li>Suitable for residential / service lifts</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 2. SS Hairline Half Mirror -->
+    <div class="cabin-card popular">
+      <div class="card-header">
+        <div class="popular-badge">Popular</div>
+        <div class="card-icon">✨</div>
+        <h3>SS Hairline — Half Mirror &amp; Handrail</h3>
+      </div>
+      <div class="card-prices">
+        <div class="price-row">
+          <span class="pax-label">4 Passenger (320 kg)</span>
+          <div><div class="price-val">&#8377; 1,24,000</div><div class="price-gst">+ GST &#8377; 22,320<br>Total &#8377; 1,46,320</div></div>
+        </div>
+        <div class="price-row">
+          <span class="pax-label">6 Passenger (480 kg)</span>
+          <div><div class="price-val">&#8377; 1,60,000</div><div class="price-gst">+ GST &#8377; 28,800<br>Total &#8377; 1,88,800</div></div>
+        </div>
+        <div class="price-row">
+          <span class="pax-label">8 Passenger (630 kg)</span>
+          <div><div class="price-val">&#8377; 2,06,000</div><div class="price-gst">+ GST &#8377; 37,080<br>Total &#8377; 2,43,080</div></div>
+        </div>
+      </div>
+      <div class="card-specs">
+        <ul>
+          <li>304 SS hairline 1 mm — 3 walls</li>
+          <li>Rear lower half: 6 mm toughened mirror</li>
+          <li>Rear upper half: SS hairline panel</li>
+          <li>38 mm dia. round SS 304 handrail</li>
+          <li>SS false ceiling, LED downlights</li>
+          <li>Best value mid-range finish</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 3. SS Hairline Designer Sheet -->
+    <div class="cabin-card">
+      <div class="card-header">
+        <div class="card-icon">🎨</div>
+        <h3>SS Hairline — Designer Sheet Panels</h3>
+      </div>
+      <div class="card-prices">
+        <div class="price-row">
+          <span class="pax-label">4 Passenger (320 kg)</span>
+          <div><div class="price-val">&#8377; 1,42,000</div><div class="price-gst">+ GST &#8377; 25,560<br>Total &#8377; 1,67,560</div></div>
+        </div>
+        <div class="price-row">
+          <span class="pax-label">6 Passenger (480 kg)</span>
+          <div><div class="price-val">&#8377; 1,84,000</div><div class="price-gst">+ GST &#8377; 33,120<br>Total &#8377; 2,17,120</div></div>
+        </div>
+        <div class="price-row">
+          <span class="pax-label">8 Passenger (630 kg)</span>
+          <div><div class="price-val">&#8377; 2,36,000</div><div class="price-gst">+ GST &#8377; 42,480<br>Total &#8377; 2,78,480</div></div>
+        </div>
+      </div>
+      <div class="card-specs">
+        <ul>
+          <li>304 SS hairline 1 mm — 3 walls</li>
+          <li>Accent designer panel inserts (colour / embossed)</li>
+          <li>38 mm dia. round SS 304 handrail</li>
+          <li>SS false ceiling with LED pelmet</li>
+          <li>Panel choices: Champagne, Rose Gold, Copper, Black</li>
+          <li>Premium look, commercial &amp; residential</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 4. Full Designer Sheet -->
+    <div class="cabin-card">
+      <div class="card-header">
+        <div class="card-icon">🖼️</div>
+        <h3>Full Designer Sheet</h3>
+      </div>
+      <div class="card-prices">
+        <div class="price-row">
+          <span class="pax-label">4 Passenger (320 kg)</span>
+          <div><div class="price-val">&#8377; 1,62,000</div><div class="price-gst">+ GST &#8377; 29,160<br>Total &#8377; 1,91,160</div></div>
+        </div>
+        <div class="price-row">
+          <span class="pax-label">6 Passenger (480 kg)</span>
+          <div><div class="price-val">&#8377; 2,10,000</div><div class="price-gst">+ GST &#8377; 37,800<br>Total &#8377; 2,47,800</div></div>
+        </div>
+        <div class="price-row">
+          <span class="pax-label">8 Passenger (630 kg)</span>
+          <div><div class="price-val">&#8377; 2,70,000</div><div class="price-gst">+ GST &#8377; 48,600<br>Total &#8377; 3,18,600</div></div>
+        </div>
+      </div>
+      <div class="card-specs">
+        <ul>
+          <li>All 3 walls: premium designer panels</li>
+          <li>Panel options: HPL, wood-grain SS, marble-effect</li>
+          <li>SS 304 skirting, ceiling &amp; door surround</li>
+          <li>38 mm dia. round SS handrail</li>
+          <li>Flush LED ceiling with halo effect</li>
+          <li>Luxury residential / boutique commercial</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 5. 1 Side Glass -->
+    <div class="cabin-card">
+      <div class="card-header">
+        <div class="card-icon">🔲</div>
+        <h3>1 Side Glass — Designer Sheet</h3>
+      </div>
+      <div class="card-prices">
+        <div class="price-row">
+          <span class="pax-label">4 Passenger (320 kg)</span>
+          <div><div class="price-val">&#8377; 1,88,000</div><div class="price-gst">+ GST &#8377; 33,840<br>Total &#8377; 2,21,840</div></div>
+        </div>
+        <div class="price-row">
+          <span class="pax-label">6 Passenger (480 kg)</span>
+          <div><div class="price-val">&#8377; 2,44,000</div><div class="price-gst">+ GST &#8377; 43,920<br>Total &#8377; 2,87,920</div></div>
+        </div>
+        <div class="price-row">
+          <span class="pax-label">8 Passenger (630 kg)</span>
+          <div><div class="price-val">&#8377; 3,12,000</div><div class="price-gst">+ GST &#8377; 56,160<br>Total &#8377; 3,68,160</div></div>
+        </div>
+      </div>
+      <div class="card-specs">
+        <ul>
+          <li>1 side wall: 10 mm toughened glass (clear / bronze)</li>
+          <li>SS 304 aluminium glass framing system</li>
+          <li>2 remaining walls: designer sheet panels</li>
+          <li>SS 304 handrail, skirting &amp; pelmet</li>
+          <li>LED halo false ceiling</li>
+          <li>Ideal for atrium / lobby visibility</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 6. 2 Side Glass -->
+    <div class="cabin-card">
+      <div class="card-header">
+        <div class="card-icon">🪟</div>
+        <h3>2 Side Glass — Designer Sheet</h3>
+      </div>
+      <div class="card-prices">
+        <div class="price-row">
+          <span class="pax-label">4 Passenger (320 kg)</span>
+          <div><div class="price-val">&#8377; 2,24,000</div><div class="price-gst">+ GST &#8377; 40,320<br>Total &#8377; 2,64,320</div></div>
+        </div>
+        <div class="price-row">
+          <span class="pax-label">6 Passenger (480 kg)</span>
+          <div><div class="price-val">&#8377; 2,90,000</div><div class="price-gst">+ GST &#8377; 52,200<br>Total &#8377; 3,42,200</div></div>
+        </div>
+        <div class="price-row">
+          <span class="pax-label">8 Passenger (630 kg)</span>
+          <div><div class="price-val">&#8377; 3,72,000</div><div class="price-gst">+ GST &#8377; 66,960<br>Total &#8377; 4,38,960</div></div>
+        </div>
+      </div>
+      <div class="card-specs">
+        <ul>
+          <li>Both side walls: 10 mm toughened glass</li>
+          <li>Rear wall: premium designer sheet panel</li>
+          <li>SS 304 framing, handrail &amp; skirting</li>
+          <li>LED halo ceiling, panoramic effect</li>
+          <li>Optional: frosted / tinted glass (+₹8,000)</li>
+          <li>Premium malls, hotels, show buildings</li>
+        </ul>
+      </div>
+    </div>
+
+  </div><!-- /cabin-cards -->
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- SPECIFICATION COMPARISON TABLE -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="section-title page-break">Feature &amp; Specification Comparison</div>
+
+  <div class="spec-table-wrap">
+    <table class="spec-table">
+      <thead>
+        <tr>
+          <th>Feature / Component</th>
+          <th>MS Powder Coated</th>
+          <th>SS Hairline + Mirror</th>
+          <th>SS + Designer</th>
+          <th>Full Designer</th>
+          <th>1 Side Glass</th>
+          <th>2 Side Glass</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Wall material</td>
+          <td>MS CR Sheet</td>
+          <td>SS 304 Hairline</td>
+          <td>SS 304 Hairline</td>
+          <td>Designer Panel</td>
+          <td>Glass + Designer</td>
+          <td>Glass + Designer</td>
+        </tr>
+        <tr>
+          <td>Half mirror panel</td>
+          <td class="no">&mdash;</td>
+          <td class="yes">Yes (rear)</td>
+          <td class="no">&mdash;</td>
+          <td class="no">&mdash;</td>
+          <td class="no">&mdash;</td>
+          <td class="no">&mdash;</td>
+        </tr>
+        <tr>
+          <td>Designer accent panels</td>
+          <td class="no">&mdash;</td>
+          <td class="no">&mdash;</td>
+          <td class="yes">Yes</td>
+          <td class="yes">Full walls</td>
+          <td class="yes">2 walls</td>
+          <td class="yes">1 wall</td>
+        </tr>
+        <tr>
+          <td>Toughened glass walls</td>
+          <td class="no">&mdash;</td>
+          <td class="no">&mdash;</td>
+          <td class="no">&mdash;</td>
+          <td class="no">&mdash;</td>
+          <td class="yes">1 side (10 mm)</td>
+          <td class="yes">2 sides (10 mm)</td>
+        </tr>
+        <tr>
+          <td>SS 304 handrail</td>
+          <td class="no">&mdash;</td>
+          <td class="yes">Yes (38 mm)</td>
+          <td class="yes">Yes (38 mm)</td>
+          <td class="yes">Yes (38 mm)</td>
+          <td class="yes">Yes (38 mm)</td>
+          <td class="yes">Yes (38 mm)</td>
+        </tr>
+        <tr>
+          <td>LED light pelmet / false ceiling</td>
+          <td class="yes">Basic LED</td>
+          <td class="yes">SS pelmet</td>
+          <td class="yes">SS pelmet</td>
+          <td class="yes">Halo LED</td>
+          <td class="yes">Halo LED</td>
+          <td class="yes">Halo LED</td>
+        </tr>
+        <tr>
+          <td>SS door surround / jamb</td>
+          <td class="yes">Yes</td>
+          <td class="yes">Yes</td>
+          <td class="yes">Yes</td>
+          <td class="yes">Yes</td>
+          <td class="yes">Yes</td>
+          <td class="yes">Yes</td>
+        </tr>
+        <tr>
+          <td>SS skirting</td>
+          <td class="no">&mdash;</td>
+          <td class="yes">Yes</td>
+          <td class="yes">Yes</td>
+          <td class="yes">Yes</td>
+          <td class="yes">Yes</td>
+          <td class="yes">Yes</td>
+        </tr>
+        <tr>
+          <td>Powder coat finish</td>
+          <td class="yes">Full cabin</td>
+          <td class="opt">Frame only</td>
+          <td class="opt">Frame only</td>
+          <td class="opt">Frame only</td>
+          <td class="opt">Frame only</td>
+          <td class="opt">Frame only</td>
+        </tr>
+        <tr>
+          <td>Flooring (optional, priced separately)</td>
+          <td class="opt">Optional</td>
+          <td class="opt">Optional</td>
+          <td class="opt">Optional</td>
+          <td class="opt">Optional</td>
+          <td class="opt">Optional</td>
+          <td class="opt">Optional</td>
+        </tr>
+        <tr>
+          <td>Suitable for</td>
+          <td>Residential / service</td>
+          <td>Residential / commercial</td>
+          <td>Commercial / premium res.</td>
+          <td>Luxury residential</td>
+          <td>Atrium / lobby</td>
+          <td>Malls / hotels</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- ADD-ON OPTIONS -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="section-title">Optional Add-Ons &amp; Accessories</div>
+
+  <div class="table-wrap" style="margin-bottom:24px;">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:30px">#</th>
+          <th>Item</th>
+          <th>Specification</th>
+          <th class="num">Unit Price (&#8377;)<br><small style="font-weight:400;opacity:0.8">Excl. GST</small></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>A1</td><td>Granite / marble flooring</td><td>18 mm, polished — cab area only</td><td class="num">&#8377; 8,500–14,000</td></tr>
+        <tr><td>A2</td><td>Anti-skid vinyl flooring</td><td>3 mm commercial grade, per sq.m</td><td class="num">&#8377; 850 / sq.m</td></tr>
+        <tr><td>A3</td><td>SS chequer-plate flooring</td><td>4 mm SS 304 chequer plate</td><td class="num">&#8377; 6,500–9,500</td></tr>
+        <tr><td>A4</td><td>Frosted / tinted glass upgrade</td><td>Applicable to glass-wall types</td><td class="num">&#8377; 7,500 / panel</td></tr>
+        <tr><td>A5</td><td>Flat / D-type handrail upgrade</td><td>SS 304, per linear metre</td><td class="num">&#8377; 1,200 / m</td></tr>
+        <tr><td>A6</td><td>Vandal-resistant panel upgrade</td><td>2 mm SS 316, high-traffic finish</td><td class="num">&#8377; 9,000–15,000</td></tr>
+        <tr><td>A7</td><td>Emergency lighting unit</td><td>LED, 3 hr backup, IS 14665 compliant</td><td class="num">&#8377; 3,800</td></tr>
+        <tr><td>A8</td><td>Ventilation fan (roof-mounted)</td><td>220 V, 20 W, low-noise</td><td class="num">&#8377; 2,400</td></tr>
+        <tr><td>A9</td><td>Custom size surcharge (±100 mm)</td><td>Any non-standard car dimension</td><td class="num">8–15% on base</td></tr>
+        <tr><td>A10</td><td>Glass rear wall (panoramic rear)</td><td>10 mm toughened, SS frame, per panel</td><td class="num">&#8377; 22,000–32,000</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- MARKET POSITIONING NOTE -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="section-title">Market Positioning &amp; Pricing Rationale</div>
+
+  <div class="table-wrap" style="margin-bottom:24px;">
+    <table>
+      <thead>
+        <tr>
+          <th>Cabin Type</th>
+          <th class="num">Our Price<br>(4 Pax, &#8377;)</th>
+          <th class="num">Market Low<br>(&#8377;)</th>
+          <th class="num">Market High<br>(&#8377;)</th>
+          <th>Positioning</th>
+          <th>Est. Gross Margin</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>MS Powder Coated</td><td class="num">82,000</td><td class="num">68,000</td><td class="num">1,10,000</td><td>Value segment</td><td>~30%</td></tr>
+        <tr class="pop-row"><td>SS Hairline + Half Mirror ★</td><td class="num">1,24,000</td><td class="num">1,00,000</td><td class="num">1,65,000</td><td>Mid-market sweet spot</td><td>~31%</td></tr>
+        <tr><td>SS Hairline + Designer Sheet</td><td class="num">1,42,000</td><td class="num">1,20,000</td><td class="num">1,90,000</td><td>Mid-premium</td><td>~30%</td></tr>
+        <tr><td>Full Designer Sheet</td><td class="num">1,62,000</td><td class="num">1,40,000</td><td class="num">2,20,000</td><td>Premium</td><td>~32%</td></tr>
+        <tr><td>1 Side Glass + Designer</td><td class="num">1,88,000</td><td class="num">1,60,000</td><td class="num">2,60,000</td><td>Premium plus</td><td>~32%</td></tr>
+        <tr><td>2 Side Glass + Designer</td><td class="num">2,24,000</td><td class="num">1,95,000</td><td class="num">3,20,000</td><td>Luxury / showcase</td><td>~33%</td></tr>
+      </tbody>
+      <tfoot>
+        <tr><td colspan="6">Market benchmarks compiled from leading Indian elevator cabin suppliers &amp; OEM catalogue data (Otis, KONE, Schindler, Johnson Lifts, Premier Elevators, Omega Elevators, BEW — 2024–2025 ex-works list prices). Our pricing is positioned below mid-market to win volume while maintaining healthy margins.</td></tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- Terms -->
+  <div class="section-title">Terms &amp; Conditions</div>
+  <div class="terms">
+    <h4>Standard Commercial Terms</h4>
+    <ol>
+      <li><strong>Prices:</strong> Ex-works, exclusive of GST @18%, freight, octroi/entry tax, and insurance. Prices valid for 30 days from date of quotation or until 31 August 2025, whichever is earlier.</li>
+      <li><strong>Payment:</strong> 50% advance with order confirmation, 40% before dispatch, 10% within 7 days of installation completion.</li>
+      <li><strong>Delivery:</strong> 4–6 weeks from advance receipt for standard sizes. 6–8 weeks for custom dimensions or premium finishes.</li>
+      <li><strong>Warranty:</strong> 12 months from date of installation against manufacturing defects in workmanship and materials. Excludes consumables, flooring, glass breakage from misuse.</li>
+      <li><strong>Standard sizes:</strong> Prices cover cabin dimensions as listed in the dimension table. Non-standard sizes attract 8–15% surcharge (A9).</li>
+      <li><strong>Raw material escalation:</strong> If SS, MS, or glass prices move more than ±8% from the date of quotation, prices are subject to revision.</li>
+      <li><strong>Flooring, COP/LOP panels, electrical fittings, and installation are not included</strong> unless separately quoted.</li>
+      <li><strong>Jurisdiction:</strong> Pune, Maharashtra. Disputes subject to Pune civil courts.</li>
+    </ol>
+  </div>
+
+  <div class="actions" style="margin-top:24px;">
+    <button class="btn-primary" onclick="window.print()">&#128438;&nbsp; Print / Save as PDF</button>
+    <a href="index.html" style="text-decoration:none;"><button class="btn-secondary">&#8592;&nbsp; Back to Lift Tester</button></a>
+  </div>
+
+</main>
+
+<footer class="app-footer">
+  Portal Lift &mdash; Elevator Cabin Price List &middot; Effective May 2025 &middot; Ex-works, Excl. GST &middot; All prices in INR &middot; Subject to terms &amp; conditions above.
+</footer>
+
+<script>
+function copyPrices() {
+  const lines = [
+    'Portal Lift — Elevator Cabin Price List (May 2025, Ex-works, Excl. GST)',
+    '─────────────────────────────────────────────────────────────────',
+    'Cabin Type                          4 Pax      6 Pax      8 Pax',
+    '─────────────────────────────────────────────────────────────────',
+    'MS Powder Coated                 ₹82,000  ₹1,05,000  ₹1,35,000',
+    'SS Hairline + Half Mirror + HR  ₹1,24,000  ₹1,60,000  ₹2,06,000',
+    'SS Hairline + Designer Sheet    ₹1,42,000  ₹1,84,000  ₹2,36,000',
+    'Full Designer Sheet             ₹1,62,000  ₹2,10,000  ₹2,70,000',
+    '1 Side Glass + Designer Sheet   ₹1,88,000  ₹2,44,000  ₹3,12,000',
+    '2 Side Glass + Designer Sheet   ₹2,24,000  ₹2,90,000  ₹3,72,000',
+    '─────────────────────────────────────────────────────────────────',
+    'Add 18% GST to all prices. Freight & installation extra.',
+  ];
+  navigator.clipboard.writeText(lines.join('\n')).then(function() {
+    alert('Price summary copied to clipboard!');
+  }).catch(function() {
+    alert('Copy not supported in this browser. Use Print/PDF instead.');
+  });
+}
+</script>
+
+</body>
+</html>
