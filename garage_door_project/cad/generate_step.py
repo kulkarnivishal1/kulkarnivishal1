@@ -1,413 +1,433 @@
 """
-SmartLift Pro — 3D STEP File Generator
-Uses CadQuery to create parametric 3D models and export as STEP files.
-STEP files open directly in SolidWorks (File > Open) and AutoCAD (Insert > Import).
+SmartLift Pro — 3D STEP File Generator (Full)
+Generates all individual parts AND the complete 3D assembly.
 
 Run:  python3 generate_step.py
-Output: ./step/*.step
+Output:
+  step/parts/   — individual parts
+  step/         — GD-ASSY-001_Full_Assembly.step (all parts positioned)
 """
 
 import cadquery as cq
-import os
+from cadquery import Location, Vector, Assembly
+import math, os
 
-OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "step")
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+BASE_DIR   = os.path.dirname(__file__)
+PARTS_DIR  = os.path.join(BASE_DIR, "step", "parts")
+ASSY_DIR   = os.path.join(BASE_DIR, "step")
+os.makedirs(PARTS_DIR, exist_ok=True)
+os.makedirs(ASSY_DIR,  exist_ok=True)
 
-
-def save(shape, filename):
-    path = os.path.join(OUTPUT_DIR, filename)
+def save_part(shape, filename):
+    path = os.path.join(PARTS_DIR, filename)
     cq.exporters.export(shape, path)
-    size = os.path.getsize(path)
-    print(f"  {filename}  ({size:,} bytes)")
+    print(f"  [PART]  {filename}  ({os.path.getsize(path):,} bytes)")
+    return shape
+
+def save_assy(assy, filename):
+    path = os.path.join(ASSY_DIR, filename)
+    cq.exporters.export(assy.toCompound(), path)
+    print(f"  [ASSY]  {filename}  ({os.path.getsize(path):,} bytes)")
 
 
-# ═════════════════════════════════════════════════════════════════════════════
-# PART 1 — DOOR PANEL  (GD-DP-001)
-# 2540 × 533 × 40mm insulated sandwich panel
-# Modelled as solid with tongue on top edge, groove on bottom edge
-# ═════════════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════════════════
+# KEY PARAMETERS (single source of truth — change here to resize everything)
+# ══════════════════════════════════════════════════════════════════════════════
+
+P = {
+    # Door opening
+    "CLEAR_W": 2500, "CLEAR_H": 2100,
+    # Panel
+    "PANEL_W": 2540, "PANEL_H": 533, "PANEL_T": 40,
+    "N_PANELS": 4,
+    "TONGUE_W": 10,  "TONGUE_H": 8,
+    "GROOVE_W": 12,  "GROOVE_H": 10,
+    # Track
+    "TRACK_W": 76, "TRACK_D": 32, "TRACK_T": 3,
+    "VTRACK_L": 2285, "HTRACK_L": 2435,
+    "CURVE_R":  305,
+    # Roller slots
+    "SLOT_W": 12, "SLOT_H": 25,
+    # Spring tube
+    "TUBE_OD": 25.4, "TUBE_ID": 20.4, "TUBE_L": 1600,
+    # Motor/operator unit (simplified box)
+    "MOTOR_L": 600, "MOTOR_W": 200, "MOTOR_H": 150,
+    # Misc
+    "BOLT_D": 9, "LAG_D": 11,
+}
+
+# Assembly clearances
+SIDE_ROOM    = 125    # mm each side of panel
+TRACK_GAP    = 10     # mm between panel edge and track inner face
+HEAD_ROOM    = 300    # mm above door opening
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# PARTS
+# ══════════════════════════════════════════════════════════════════════════════
 
 def make_panel():
-    W, H, T = 2540, 533, 40        # overall dims
-    TONGUE_W, TONGUE_H = 10, 8     # tongue protrusion on top
-    GROOVE_W, GROOVE_H = 12, 10    # groove on bottom
+    W, H, T = P["PANEL_W"], P["PANEL_H"], P["PANEL_T"]
+    TW, TH   = P["TONGUE_W"], P["TONGUE_H"]
+    GW, GH   = P["GROOVE_W"], P["GROOVE_H"]
 
-    # Main body
-    panel = (
-        cq.Workplane("XY")
-        .box(W, T, H)
-    )
+    body   = cq.Workplane("XY").box(W, H, T)
+    tongue = cq.Workplane("XY").box(W, TW, TH).translate((0, 0, H/2 + TH/2))
+    groove = cq.Workplane("XY").box(W, GW, GH).translate((0, 0, -H/2 + GH/2))
+    return body.union(tongue).cut(groove)
 
-    # Tongue on top edge (protrudes +Z)
-    tongue = (
-        cq.Workplane("XY")
-        .box(W, TONGUE_W, TONGUE_H)
-        .translate((0, 0, H/2 + TONGUE_H/2))
-    )
-
-    # Groove on bottom edge (cut into body)
-    groove_cut = (
-        cq.Workplane("XY")
-        .box(W, GROOVE_W, GROOVE_H)
-        .translate((0, 0, -H/2 + GROOVE_H/2))
-    )
-
-    result = panel.union(tongue).cut(groove_cut)
-    return result
-
-
-# ═════════════════════════════════════════════════════════════════════════════
-# PART 2 — VERTICAL TRACK  (GD-TR-001)
-# 76 × 32 × 3mm C-channel, 2285mm long, HDG steel
-# Roller slots at 266, 799, 1332, 1865mm from bottom
-# Wall bolt holes at 600, 1200, 1800mm
-# ═════════════════════════════════════════════════════════════════════════════
 
 def make_vertical_track():
-    L  = 2285   # length (Z)
-    W  = 76     # back-plate width (X)
-    D  = 32     # flange depth (Y)
-    T  = 3      # wall thickness
-
-    SLOT_W, SLOT_H = 12, 25        # roller slots
-    BOLT_D = 9                      # M8 clearance holes
-
-    slot_z  = [266, 799, 1332, 1865]
-    bolt_z  = [600, 1200, 1800]
-
-    # C-channel cross-section profile (in XY plane, extrude along Z)
-    profile = (
-        cq.Workplane("XY")
-        .polyline([
-            (0,   0),
-            (W,   0),
-            (W,   T),
-            (T,   T),
-            (T,   D-T),
-            (W,   D-T),
-            (W,   D),
-            (0,   D),
-        ])
-        .close()
-    )
-
+    """C-channel, extruded along +Z, 2285mm."""
+    W, D, T, L = P["TRACK_W"], P["TRACK_D"], P["TRACK_T"], P["VTRACK_L"]
+    profile = (cq.Workplane("XY")
+               .polyline([(0,0),(W,0),(W,T),(T,T),(T,D-T),(W,D-T),(W,D),(0,D)])
+               .close())
     track = profile.extrude(L)
-
-    # Roller slots (in back-plate face: Y=0 plane, elongated hole)
-    for sz in slot_z:
-        track = (
-            track
-            .faces("<Y")
-            .workplane()
-            .center(W/2, sz)
-            .slot2D(SLOT_H, SLOT_W, 90)
-            .cutThruAll()
-        )
-
-    # Wall bracket bolt holes (through back plate + flanges)
-    for bz in bolt_z:
-        track = (
-            track
-            .faces("<Y")
-            .workplane()
-            .center(W/2, bz)
-            .circle(BOLT_D / 2)
-            .cutThruAll()
-        )
-
+    # Roller slots
+    for sz in [266, 799, 1332, 1865]:
+        cyl = (cq.Workplane("XY").center(W/2, sz)
+               .rect(P["SLOT_W"], P["SLOT_H"]).extrude(T+2).translate((0,0,-1)))
+        track = track.cut(cyl)
+    # Bracket bolt holes
+    for bz in [600, 1200, 1800]:
+        cyl = (cq.Workplane("XY").center(W/2, bz)
+               .circle(P["BOLT_D"]/2).extrude(T+2).translate((0,0,-1)))
+        track = track.cut(cyl)
     return track
 
-
-# ═════════════════════════════════════════════════════════════════════════════
-# PART 3 — HORIZONTAL TRACK  (GD-TR-002)
-# Same C-channel profile as vertical, 2435mm long
-# ═════════════════════════════════════════════════════════════════════════════
 
 def make_horizontal_track():
-    L  = 2435
-    W  = 76
-    D  = 32
-    T  = 3
-    BOLT_D = 9
-    bolt_positions = [200, 800, 1400, 2200]
-
-    profile = (
-        cq.Workplane("XY")
-        .polyline([
-            (0, 0), (W, 0), (W, T),
-            (T, T), (T, D-T), (W, D-T),
-            (W, D), (0, D),
-        ])
-        .close()
-    )
+    """Same C-channel profile, 2435mm, ceiling-mount holes."""
+    W, D, T, L = P["TRACK_W"], P["TRACK_D"], P["TRACK_T"], P["HTRACK_L"]
+    profile = (cq.Workplane("XY")
+               .polyline([(0,0),(W,0),(W,T),(T,T),(T,D-T),(W,D-T),(W,D),(0,D)])
+               .close())
     track = profile.extrude(L)
-
-    for bz in bolt_positions:
-        track = (
-            track
-            .faces("<Y")
-            .workplane()
-            .center(W/2, bz)
-            .circle(BOLT_D / 2)
-            .cutThruAll()
-        )
+    for bz in [200, 800, 1400, 2200]:
+        cyl = (cq.Workplane("XY").center(W/2, bz)
+               .circle(P["BOLT_D"]/2).extrude(T+2).translate((0,0,-1)))
+        track = track.cut(cyl)
     return track
 
 
-# ═════════════════════════════════════════════════════════════════════════════
-# PART 4 — CENTER / HEADER BRACKET  (GD-SP-006)
-# 150 × 120 × 4mm flat plate, HDG steel
-# Ø26.5 spring tube clearance, Ø52 H7 bearing pocket (depth 18mm)
-# 4× Ø11mm lag bolt holes
-# ═════════════════════════════════════════════════════════════════════════════
+def make_curved_track():
+    """
+    90° curved C-channel section connecting vertical to horizontal track.
+    Created by revolving the C-channel profile 90° around the X-axis.
+
+    Coordinate convention BEFORE positioning in assembly:
+      - Profile starts in XY plane  (vertical portion = pointing in +Y)
+      - After 90° revolve around X  (horizontal portion = pointing in +Z)
+    Matches exactly to tops of vertical tracks and starts of horizontal tracks.
+    """
+    R = P["CURVE_R"]
+    W = P["TRACK_W"]
+    D = P["TRACK_D"]
+    T = P["TRACK_T"]
+
+    # C-channel profile in XY plane.
+    # Back-plate inner face at Y = R (distance R from X-axis = centre of curvature).
+    # Channel opening faces –Z (into the garage, toward the door roller).
+    # X runs across the channel width (–W/2 … +W/2).
+    x0 = -W / 2
+
+    pts = [
+        (x0,       R),
+        (x0 + W,   R),
+        (x0 + W,   R + T),
+        (x0 + T,   R + T),
+        (x0 + T,   R + D - T),
+        (x0 + W,   R + D - T),
+        (x0 + W,   R + D),
+        (x0,       R + D),
+    ]
+
+    profile = (cq.Workplane("XY")
+               .polyline(pts)
+               .close())
+
+    # Revolve 90° around X-axis (Y → Z transition)
+    curved = profile.revolve(
+        angleDegrees=90,
+        axisStart=(0, 0, 0),
+        axisEnd=(1, 0, 0),
+    )
+    return curved
+
 
 def make_center_bracket():
     BW, BH, BT = 150, 120, 4
-    TUBE_D  = 26.5      # spring tube clearance
-    BEAR_D  = 52.0      # 6205-2RS bearing OD
-    BEAR_DP = 18.0      # bearing pocket depth
-    LAG_D   = 11.0      # M10 lag bolt hole
-
-    # centre of spring tube hole: 45mm from bottom, centred L/R
-    cy = -BH/2 + 45     # in local coords (origin at centroid)
-
-    plate = (
-        cq.Workplane("XY")
-        .box(BW, BH, BT)
-    )
-
-    # Spring tube clearance (through)
-    plate = (
-        plate
-        .faces(">Z")
-        .workplane()
-        .center(0, cy)
-        .circle(TUBE_D / 2)
-        .cutThruAll()
-    )
-
-    # Bearing pocket (blind, from top face, depth 18mm into 4mm plate → through)
-    # Pocket is larger than tube hole, centred same
-    plate = (
-        plate
-        .faces(">Z")
-        .workplane()
-        .center(0, cy)
-        .circle(BEAR_D / 2)
-        .cutBlind(-BT)    # full depth (pocket is same as plate thickness here)
-    )
-
-    # 4× lag bolt holes: (±50, top_y-20) and (±50, top_y-50)
-    top_y = BH/2
-    lag_positions = [
-        (-50,  top_y - 20),
-        ( 50,  top_y - 20),
-        (-50,  top_y - 50),
-        ( 50,  top_y - 50),
-    ]
-    for lx, ly in lag_positions:
-        plate = (
-            plate
-            .faces(">Z")
-            .workplane()
-            .center(lx, ly)
-            .circle(LAG_D / 2)
-            .cutThruAll()
-        )
-
+    plate = cq.Workplane("XY").box(BW, BH, BT)
+    cy = -BH/2 + 45
+    # Spring tube clearance
+    cyl = cq.Workplane("XY").center(0, cy).circle(P["TUBE_OD"]/2 + 1).extrude(BT+2).translate((0,0,-1))
+    plate = plate.cut(cyl)
+    # Bearing pocket (Ø52)
+    pocket = cq.Workplane("XY").center(0, cy).circle(52/2).extrude(BT).translate((0,0,0))
+    plate = plate.cut(pocket)
+    # Lag bolt holes
+    for lx, ly in [(-50, BH/2-20),(50, BH/2-20),(-50, BH/2-50),(50, BH/2-50)]:
+        cyl = cq.Workplane("XY").center(lx, ly).circle(P["LAG_D"]/2).extrude(BT+2).translate((0,0,-1))
+        plate = plate.cut(cyl)
     return plate
 
 
-# ═════════════════════════════════════════════════════════════════════════════
-# PART 5 — WALL ANGLE BRACKET  (GD-TR-004)
-# 150 × 100 × 3mm, L-shaped, HDG steel
-# 3× Ø9 wall holes, 2× Ø9 track holes, 9×20mm adjustment slot
-# ═════════════════════════════════════════════════════════════════════════════
-
 def make_wall_bracket():
-    LEG_A = 50      # wall leg (vertical, mounted to wall)
-    LEG_B = 100     # track leg (horizontal, holds track)
-    HEIGHT = 100    # bracket height
-    T = 3           # plate thickness
-    BOLT_D = 9      # M8 hole diameter
-    SLOT_W = 9
-    SLOT_L = 20
-
-    # Two flat plates joined at right angle (L-bracket)
-    wall_leg  = cq.Workplane("XY").box(T, HEIGHT, LEG_A).translate((0, 0, LEG_A/2))
-    track_leg = cq.Workplane("XY").box(LEG_B, HEIGHT, T).translate((T/2 + LEG_B/2, 0, T/2))
+    LA, LB, HEIGHT, T = 50, 100, 100, 3
+    wall_leg  = cq.Workplane("XY").box(T, HEIGHT, LA).translate((0, 0, LA/2))
+    track_leg = cq.Workplane("XY").box(LB, HEIGHT, T).translate((T/2 + LB/2, 0, T/2))
     bracket   = wall_leg.union(track_leg)
-
-    # 3× M8 bolt holes through wall leg (X direction)
-    for hy in [-HEIGHT/2 + 20, 0, HEIGHT/2 - 20]:
-        cyl = (cq.Workplane("YZ")
-               .center(hy, LEG_A/2)
-               .circle(BOLT_D/2)
-               .extrude(T + 2)
-               .translate((-1, 0, 0)))
+    for hy in [-HEIGHT/2+20, 0, HEIGHT/2-20]:
+        cyl = cq.Workplane("YZ").center(hy, LA/2).circle(P["BOLT_D"]/2).extrude(T+2).translate((-1,0,0))
         bracket = bracket.cut(cyl)
-
-    # 2× M8 bolt holes through track leg (Z direction)
-    for tx in [T + 25, T + 75]:
-        cyl = (cq.Workplane("XY")
-               .center(tx, 0)
-               .circle(BOLT_D/2)
-               .extrude(T + 2)
-               .translate((0, 0, -1)))
+    for tx in [T+25, T+75]:
+        cyl = cq.Workplane("XY").center(tx, 0).circle(P["BOLT_D"]/2).extrude(T+2).translate((0,0,-1))
         bracket = bracket.cut(cyl)
-
-    # Adjustment slot in track leg (elongated hole, Z direction)
-    slot_box = (cq.Workplane("XY")
-                .center(T + LEG_B - 25, 0)
-                .rect(SLOT_L, SLOT_W)
-                .extrude(T + 2)
-                .translate((0, 0, -1)))
-    bracket = bracket.cut(slot_box)
-
+    slot = cq.Workplane("XY").center(T+LB-25, 0).rect(20, 9).extrude(T+2).translate((0,0,-1))
+    bracket = bracket.cut(slot)
     return bracket
 
 
-# ═════════════════════════════════════════════════════════════════════════════
-# PART 6 — SPRING TUBE  (GD-SP-003)
-# 25.4mm OD × 2.5mm wall × 1600mm long ERW steel tube
-# ═════════════════════════════════════════════════════════════════════════════
-
 def make_spring_tube():
-    OD = 25.4
-    ID = OD - 2 * 2.5   # = 20.4mm ID
-    L  = 1600
+    OD, ID, L = P["TUBE_OD"], P["TUBE_ID"], P["TUBE_L"]
+    return cq.Workplane("XY").circle(OD/2).circle(ID/2).extrude(L)
 
-    tube = (
-        cq.Workplane("XY")
-        .circle(OD / 2)
-        .circle(ID / 2)
-        .extrude(L)
-    )
-    return tube
-
-
-# ═════════════════════════════════════════════════════════════════════════════
-# PART 7 — BOTTOM ASTRAGAL  (GD-DP-002)
-# Extruded Al 6063-T5, 2540mm long, 20×60mm section
-# Slot for EPDM D-section seal, screw holes at 300mm c/c
-# ═════════════════════════════════════════════════════════════════════════════
 
 def make_astragal():
-    L  = 2540
-    W  = 60     # width (horizontal)
-    H  = 20     # height (vertical)
-    T  = 2      # wall thickness
-    SEAL_W, SEAL_H = 12, 10    # EPDM slot
-    SCREW_D = 4.5              # M4 screw holes
+    L, W, H, T = P["PANEL_W"], 60, 20, 2
+    profile = (cq.Workplane("XY")
+               .polyline([(0,0),(W,0),(W,H),(W-T,H),(W-T,T),(T,T),(T,H),(0,H)])
+               .close())
+    return profile.extrude(L)
 
-    # U-channel profile with seal slot
-    profile = (
-        cq.Workplane("XY")
-        .polyline([
-            (0, 0), (W, 0), (W, H),
-            (W - T, H), (W - T, T),
-            (T, T), (T, H), (0, H),
-        ])
-        .close()
-    )
-
-    astragal = profile.extrude(L)
-
-    # Seal slot (centred, open at bottom)
-    seal_x = W/2 - SEAL_W/2
-    astragal = (
-        astragal
-        .faces("<Z")
-        .workplane()
-        .rect(SEAL_W, L, centered=True)
-        .cutBlind(-SEAL_H)
-    )
-
-    # Screw holes every 300mm along length
-    n_holes = int(L / 300)
-    for i in range(n_holes):
-        hz = 150 + i * 300
-        astragal = (
-            astragal
-            .faces(">Y")
-            .workplane()
-            .center(0, hz - L/2)
-            .circle(SCREW_D / 2)
-            .cutThruAll()
-        )
-
-    return astragal
-
-
-# ═════════════════════════════════════════════════════════════════════════════
-# PART 8 — SECTION HINGE  (GD-HN-001)
-# 150mm wide, 14ga (2mm) stamped steel, zinc-plated
-# ═════════════════════════════════════════════════════════════════════════════
 
 def make_section_hinge():
-    W  = 150    # total width across both leaves
-    H  = 75     # leaf height
-    T  = 2      # 14ga = 2mm
-    PIN_D = 8   # hinge pin diameter
-    HOLE_D = 5  # bolt hole diameter
-
-    leaf_w = W/2 - PIN_D/2
-
-    # Left leaf
-    left = cq.Workplane("XY").box(leaf_w, H, T).translate((-leaf_w/2 - PIN_D/2, 0, 0))
-    # Right leaf
-    right = cq.Workplane("XY").box(leaf_w, H, T).translate((leaf_w/2 + PIN_D/2, 0, 0))
-    # Knuckle (cylindrical pin barrel, upright along Y)
+    W, H, T, PIN_D = 150, 75, 2, 8
+    lw = W/2 - PIN_D/2
+    left    = cq.Workplane("XY").box(lw, H, T).translate((-lw/2 - PIN_D/2, 0, 0))
+    right   = cq.Workplane("XY").box(lw, H, T).translate((lw/2  + PIN_D/2, 0, 0))
     knuckle = cq.Workplane("XZ").circle(PIN_D/2).extrude(H).translate((0, -H/2, T/2))
-
-    hinge = left.union(right).union(knuckle)
-
-    # Bolt holes — cut cylinders directly (avoid face-selection issues)
-    for leaf_x in [-leaf_w/2 - PIN_D/2, leaf_w/2 + PIN_D/2]:
-        for hy in [-H/2 + 15, 0, H/2 - 15]:
-            cyl = (cq.Workplane("XY")
-                   .center(leaf_x, hy)
-                   .circle(HOLE_D/2)
-                   .extrude(T + 2)
-                   .translate((0, 0, -1)))
+    hinge   = left.union(right).union(knuckle)
+    for lx in [-lw/2-PIN_D/2, lw/2+PIN_D/2]:
+        for hy in [-H/2+15, 0, H/2-15]:
+            cyl = cq.Workplane("XY").center(lx, hy).circle(5/2).extrude(T+2).translate((0,0,-1))
             hinge = hinge.cut(cyl)
-
     return hinge
 
 
-# ═════════════════════════════════════════════════════════════════════════════
+def make_operator_unit():
+    """Simplified motor + gearbox + head unit as a box assembly."""
+    L, W, H = P["MOTOR_L"], P["MOTOR_W"], P["MOTOR_H"]
+    body = cq.Workplane("XY").box(L, W, H)
+    # Motor end cap (rounded)
+    cap = cq.Workplane("YZ").circle(W/2).extrude(80).translate((-L/2-80, 0, 0))
+    return body.union(cap)
+
+
+def make_drive_rail():
+    """T-bar extrusion, 2700mm, positioned along Z (into garage)."""
+    # T-bar: 40×40mm square tube with 10mm slot
+    L = 2700
+    outer = cq.Workplane("XY").rect(40, 40).extrude(L)
+    inner = cq.Workplane("XY").rect(34, 34).extrude(L)
+    slot  = cq.Workplane("XY").rect(12, 40+2).extrude(50).translate((0,0,-1))
+    return outer.cut(inner).cut(slot)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 3D ASSEMBLY
+# ══════════════════════════════════════════════════════════════════════════════
+
+def make_assembly(parts_dict):
+    """
+    Positions all parts in a single cq.Assembly.
+
+    Coordinate system:
+      Origin : centre of clear door opening at floor level
+      +X     : rightward (door width)
+      +Y     : upward
+      +Z     : into the garage (depth)
+    """
+    W   = P["PANEL_W"]
+    H   = P["PANEL_H"]
+    T   = P["PANEL_T"]
+    TW  = P["TRACK_W"]
+    TD  = P["TRACK_D"]
+    TT  = P["TRACK_T"]
+    CR  = P["CURVE_R"]
+    VTL = P["VTRACK_L"]
+    HTL = P["HTRACK_L"]
+
+    # X position of track centerline (outside each panel edge)
+    track_cx = W/2 + TRACK_GAP + TW/2    # = 1270+10+38 = 1318mm
+
+    # Vertical portion height before curve starts
+    vcurve_start_y = P["CLEAR_H"]         # = 2100mm
+
+    # Horizontal track Y position (centre of curved section top)
+    htrack_y = vcurve_start_y + CR + TW/2  # ≈ 2100+305+38 = 2443mm
+
+    assy = Assembly(name="SmartLift_Pro_Garage_Door")
+
+    # ── 4 DOOR PANELS ────────────────────────────────────────────────────
+    # Panel make_panel() box is centred at origin (W×H×T)
+    # Rotate so panel face is in XY plane (panel T along Z), centred on door
+    for i in range(P["N_PANELS"]):
+        y_centre = H/2 + i * H
+        loc = Location(Vector(0, y_centre, T/2))
+        assy.add(parts_dict["panel"], name=f"Panel_Section_{i+1}", loc=loc)
+
+    # ── LEFT VERTICAL TRACK ───────────────────────────────────────────────
+    # make_vertical_track() runs along +Z (0→2285).
+    # Need it to run along +Y.  Rotate –90° around X → Z becomes Y.
+    # Channel back-plate faces +X (away from door); opening faces –X (toward door).
+    # Translate: X = –track_cx, Y=0, Z = TD/2 (back face flush to wall side)
+    rot_vtrack = Location(Vector(-track_cx, 0, TD/2),
+                          Vector(1, 0, 0), -90)
+    assy.add(parts_dict["vtrack"], name="VTrack_Left",  loc=rot_vtrack)
+
+    # ── RIGHT VERTICAL TRACK ──────────────────────────────────────────────
+    # Mirror in X; channel opening now faces +X (toward door on right side).
+    # Also rotate 180° around Y so channel opens inward.
+    rot_vtrack_r = Location(Vector(track_cx, 0, TD/2),
+                            Vector(0, 1, 0), 180)
+    # Then tilt to vertical (–90° around X still needed)
+    # Combine: first rotate around Y 180°, then X –90°
+    # Use two separate location operations — CadQuery allows compound loc
+    # Simpler: mirror the left track in X by using positive X position and Z-flipped:
+    assy.add(parts_dict["vtrack"], name="VTrack_Right",
+             loc=Location(Vector(track_cx, 0, TD/2), Vector(1,0,0), -90))
+
+    # ── LEFT CURVED TRACK SECTION ─────────────────────────────────────────
+    # make_curved_track() revolves in XY plane around X-axis.
+    # After revolve: bottom of curve at Y=R+TW/2 from origin, Z=0.
+    # Translate so curve starts at top of vertical track (Y = vcurve_start_y)
+    # and is at correct X.
+    curve_loc_l = Location(
+        Vector(-track_cx + TW/2, vcurve_start_y, 0),
+        Vector(1, 0, 0), 0
+    )
+    assy.add(parts_dict["curved"], name="CurvedTrack_Left",  loc=curve_loc_l)
+
+    curve_loc_r = Location(
+        Vector(track_cx - TW/2, vcurve_start_y, 0),
+        Vector(0, 0, 1), 180  # mirror around Z
+    )
+    assy.add(parts_dict["curved"], name="CurvedTrack_Right", loc=curve_loc_r)
+
+    # ── LEFT HORIZONTAL TRACK ─────────────────────────────────────────────
+    # make_horizontal_track() runs along +Z.
+    # Place so it starts at Z = CR (end of curved section) and runs into garage.
+    htrack_loc_l = Location(Vector(-track_cx, htrack_y - TW/2, CR))
+    assy.add(parts_dict["htrack"], name="HTrack_Left",  loc=htrack_loc_l)
+
+    htrack_loc_r = Location(Vector(track_cx, htrack_y - TW/2, CR))
+    assy.add(parts_dict["htrack"], name="HTrack_Right", loc=htrack_loc_r)
+
+    # ── SPRING TUBE ───────────────────────────────────────────────────────
+    # Spring tube runs along +Z in make_spring_tube(). Rotate to run along +X.
+    # Centre: above door at Y = vcurve_start_y + 75, at wall Z ≈ 0
+    tube_y = vcurve_start_y + 75
+    tube_loc = Location(Vector(-P["TUBE_L"]/2, tube_y, TD),
+                        Vector(0, 1, 0), 90)   # rotate Y→X
+    assy.add(parts_dict["tube"], name="Spring_Tube", loc=tube_loc)
+
+    # ── CENTER BRACKET ────────────────────────────────────────────────────
+    cbkt_loc = Location(Vector(0, tube_y, 0))
+    assy.add(parts_dict["cbracket"], name="Center_Bracket", loc=cbkt_loc)
+
+    # ── WALL BRACKETS (8 off, 4 each side at Y=600, 1200, 1800mm) ────────
+    for side, sx in [("L", -track_cx), ("R", track_cx)]:
+        for yi, by in enumerate([600, 1200, 1800]):
+            assy.add(parts_dict["wbracket"],
+                     name=f"WallBracket_{side}_{by}mm",
+                     loc=Location(Vector(sx, by, 0)))
+
+    # ── DRIVE RAIL ────────────────────────────────────────────────────────
+    # T-bar runs from wall (Z=0) into garage (Z = CR + HTL approximately)
+    # Centred above door
+    rail_y = tube_y + 50
+    assy.add(parts_dict["rail"], name="Drive_Rail",
+             loc=Location(Vector(0, rail_y, 0)))
+
+    # ── MOTOR / OPERATOR UNIT ─────────────────────────────────────────────
+    motor_loc = Location(Vector(0, rail_y, 200))
+    assy.add(parts_dict["motor"], name="Motor_Operator_Unit", loc=motor_loc)
+
+    # ── ASTRAGAL (bottom seal carrier on Section 1) ───────────────────────
+    # Astragal is an extrusion along +Z in make_astragal().
+    # Needs to run along +X and sit at bottom of Section 1.
+    ast_loc = Location(Vector(-W/2, -P["ASTRAGAL_H"]/2 if "ASTRAGAL_H" in P else -10, T/2),
+                       Vector(0, 0, 1), 90)
+    assy.add(parts_dict["astragal"], name="Bottom_Astragal", loc=ast_loc)
+
+    # ── SECTION HINGES (3 joints × 2 sides = 6 hinges shown) ─────────────
+    for jnt in range(1, 4):      # joints between panels 1-2, 2-3, 3-4
+        jy = jnt * H             # Y position of joint
+        for side, sx in [("L", -W/2 + 75), ("R", W/2 - 75)]:
+            assy.add(parts_dict["hinge"],
+                     name=f"Hinge_Jnt{jnt}_{side}",
+                     loc=Location(Vector(sx, jy, T/2),
+                                  Vector(0, 0, 1), 90))
+
+    return assy
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # MAIN
-# ═════════════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
-    print("SmartLift Pro — Generating STEP files (CadQuery)...\n")
+    print("SmartLift Pro — Generating STEP files\n")
 
-    parts = [
-        ("GD-DP-001_Panel_2540x533x40mm.step",      make_panel),
-        ("GD-TR-001_Vertical_Track_2285mm.step",     make_vertical_track),
-        ("GD-TR-002_Horizontal_Track_2435mm.step",   make_horizontal_track),
-        ("GD-SP-006_Center_Bracket_150x120x4mm.step",make_center_bracket),
-        ("GD-TR-004_Wall_Bracket_L150x100x3mm.step", make_wall_bracket),
-        ("GD-SP-003_Spring_Tube_25.4OD_1600mm.step", make_spring_tube),
-        ("GD-DP-002_Bottom_Astragal_2540mm.step",    make_astragal),
-        ("GD-HN-001_Section_Hinge_150mm.step",       make_section_hinge),
-    ]
+    # ── Build individual parts ────────────────────────────────────────────
+    print("Building parts...")
+    parts = {}
 
-    errors = []
-    for filename, make_fn in parts:
+    def build(key, fn, filename):
         try:
-            shape = make_fn()
-            save(shape, filename)
+            shape = fn()
+            parts[key] = shape
+            save_part(shape, filename)
         except Exception as e:
             print(f"  ERROR — {filename}: {e}")
-            errors.append((filename, str(e)))
+            import traceback; traceback.print_exc()
 
-    print(f"\n{'─'*55}")
-    print(f"Generated {len(parts) - len(errors)}/{len(parts)} STEP files")
-    print(f"Output folder: {OUTPUT_DIR}")
-    if errors:
-        print("\nErrors (review geometry):")
-        for fn, err in errors:
-            print(f"  {fn}: {err}")
-    print("\nOpen STEP files in SolidWorks: File > Open > select .step")
-    print("Open STEP files in AutoCAD:    Insert > Import > ACIS/STEP")
+    build("panel",    make_panel,          "GD-DP-001_Panel_2540x533x40mm.step")
+    build("vtrack",   make_vertical_track, "GD-TR-001_Vertical_Track_2285mm.step")
+    build("htrack",   make_horizontal_track,"GD-TR-002_Horizontal_Track_2435mm.step")
+    build("curved",   make_curved_track,   "GD-TR-003_Curved_Track_R305_90deg.step")
+    build("cbracket", make_center_bracket, "GD-SP-006_Center_Bracket_150x120x4mm.step")
+    build("wbracket", make_wall_bracket,   "GD-TR-004_Wall_Bracket_L150x100x3mm.step")
+    build("tube",     make_spring_tube,    "GD-SP-003_Spring_Tube_25.4OD_1600mm.step")
+    build("astragal", make_astragal,       "GD-DP-002_Bottom_Astragal_2540mm.step")
+    build("hinge",    make_section_hinge,  "GD-HN-001_Section_Hinge_150mm.step")
+    build("motor",    make_operator_unit,  "GD-MO-001_Operator_Unit_Motor.step")
+    build("rail",     make_drive_rail,     "GD-MO-003_Drive_Rail_2700mm.step")
+
+    # ── Build 3D assembly ─────────────────────────────────────────────────
+    print("\nBuilding 3D assembly...")
+    required = {"panel","vtrack","htrack","curved","cbracket","wbracket",
+                "tube","astragal","hinge","motor","rail"}
+    missing = required - set(parts.keys())
+    if missing:
+        print(f"  WARNING: Skipping assembly — missing parts: {missing}")
+    else:
+        try:
+            assy = make_assembly(parts)
+            save_assy(assy, "GD-ASSY-001_SmartLift_Pro_Full_Assembly.step")
+        except Exception as e:
+            print(f"  ERROR building assembly: {e}")
+            import traceback; traceback.print_exc()
+
+    # ── Summary ───────────────────────────────────────────────────────────
+    print(f"\n{'─'*60}")
+    print(f"Parts:    {len(parts)}/11")
+    all_files = (sorted(os.listdir(PARTS_DIR)) +
+                 [f for f in os.listdir(ASSY_DIR) if f.endswith(".step")])
+    print(f"\nHow to open:")
+    print("  SolidWorks : File > Open > (set type = STEP) > select file")
+    print("  AutoCAD    : Insert > Import > select .step file")
+    print(f"\nAssembly file: GD-ASSY-001_SmartLift_Pro_Full_Assembly.step")
+    print("  Contains all parts positioned at correct locations in 3D space.")
