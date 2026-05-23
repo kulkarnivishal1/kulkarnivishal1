@@ -1,0 +1,164 @@
+' ============================================================================
+' SmartLift Pro — SolidWorks VBA Macro
+' FILE: SW_002_Vertical_Track.swb
+' PART: Vertical Track — 76×32×3mm channel, 2285mm long, HDG steel
+' ============================================================================
+
+Option Explicit
+
+Const TRACK_LEN     As Double = 2285   ' mm  overall length
+Const TRACK_WIDTH   As Double = 76     ' mm  back-plate width (channel back)
+Const FLANGE_DEPTH  As Double = 32     ' mm  flange depth (C-section legs)
+Const WALL_T        As Double = 3      ' mm  wall thickness
+Const MM            As Double = 0.001
+
+' Roller slot positions (mm from bottom) and dims
+Const SLOT_W        As Double = 12     ' mm  slot width
+Const SLOT_H        As Double = 25     ' mm  slot height
+Dim SLOT_Y(4)       As Double          ' filled in Sub main
+
+' Bolt hole diameter
+Const BOLT_D        As Double = 9      ' mm  Ø9mm for M8
+
+Sub main()
+    Dim swApp       As SldWorks.SldWorks
+    Dim swModel     As SldWorks.ModelDoc2
+    Dim swPart      As SldWorks.PartDoc
+    Dim swFeature   As SldWorks.Feature
+    Dim skMgr       As SldWorks.SketchManager
+    Dim featMgr     As SldWorks.FeatureManager
+    Dim bRet        As Boolean
+
+    ' Slot positions (mid-height of each section + top roller)
+    SLOT_Y(0) = 266
+    SLOT_Y(1) = 799
+    SLOT_Y(2) = 1332
+    SLOT_Y(3) = 1865
+
+    Set swApp   = Application.SldWorks
+    Set swModel = swApp.NewDocument( _
+        swApp.GetUserPreferenceStringValue(swUserPreferenceStringValue_e.swDefaultTemplatePart), _
+        0, 0, 0)
+    Set swPart  = swModel
+    Set skMgr   = swModel.SketchManager
+    Set featMgr = swModel.FeatureManager
+
+    ' ── FEATURE 1: C-CHANNEL PROFILE EXTRUSION ──────────────────────────
+    ' Sketch channel cross-section on Front Plane
+    swModel.Extension.SelectByID2 "Front Plane", "PLANE", 0, 0, 0, False, 0, Nothing, 0
+    swModel.InsertSketch2 True
+
+    ' C-channel (opening faces +Y direction = towards rollers)
+    ' Back plate: 76mm wide at x=0, flanges 32mm deep going to +y
+    Dim pts(18) As Double
+    ' Outer profile (CCW):
+    '   (0,0) → (TRACK_WIDTH,0) → (TRACK_WIDTH,FLANGE_DEPTH)
+    '   → (TRACK_WIDTH-WALL_T, FLANGE_DEPTH)
+    '   → (TRACK_WIDTH-WALL_T, WALL_T)
+    '   → (WALL_T, WALL_T)
+    '   → (WALL_T, FLANGE_DEPTH)
+    '   → (0, FLANGE_DEPTH) → (0,0)
+    skMgr.CreateLine 0, 0, 0,                                  TRACK_WIDTH * MM, 0, 0
+    skMgr.CreateLine TRACK_WIDTH * MM, 0, 0,                   TRACK_WIDTH * MM, FLANGE_DEPTH * MM, 0
+    skMgr.CreateLine TRACK_WIDTH * MM, FLANGE_DEPTH * MM, 0,  (TRACK_WIDTH - WALL_T) * MM, FLANGE_DEPTH * MM, 0
+    skMgr.CreateLine (TRACK_WIDTH - WALL_T) * MM, FLANGE_DEPTH * MM, 0, (TRACK_WIDTH - WALL_T) * MM, WALL_T * MM, 0
+    skMgr.CreateLine (TRACK_WIDTH - WALL_T) * MM, WALL_T * MM, 0, WALL_T * MM, WALL_T * MM, 0
+    skMgr.CreateLine WALL_T * MM, WALL_T * MM, 0,              WALL_T * MM, FLANGE_DEPTH * MM, 0
+    skMgr.CreateLine WALL_T * MM, FLANGE_DEPTH * MM, 0,        0, FLANGE_DEPTH * MM, 0
+    skMgr.CreateLine 0, FLANGE_DEPTH * MM, 0,                  0, 0, 0
+
+    swModel.InsertSketch2 True
+
+    ' Extrude along Z (track length)
+    swModel.Extension.SelectByID2 "Sketch1", "SKETCH", 0, 0, 0, False, 0, Nothing, 0
+    Set swFeature = featMgr.FeatureBoss2( _
+        False, False, False, _
+        swEndCondBlind, 0, _
+        TRACK_LEN * MM, 0, _
+        False, False, False, False, 0, 0, False, False, False, False, True, True, True, 0, 0, False)
+    swFeature.Name = "Track_Channel_76x32x3mm"
+
+    ' ── FEATURE 2: ROLLER SLOTS (CUT) ────────────────────────────────────
+    ' Create all 4 roller slots via linear pattern from a single cut
+    ' Slot on the back plate face (XZ plane at y=0)
+    Dim i As Integer
+    For i = 0 To 3
+        Dim slotZ As Double
+        slotZ = SLOT_Y(i) * MM
+
+        swModel.ClearSelection2 True
+        ' Select back face (face at y=0, x=0..TRACK_WIDTH, z=0..TRACK_LEN)
+        swModel.Extension.SelectByID2 "", "FACE", TRACK_WIDTH / 2 * MM, 0, slotZ, False, 0, Nothing, 0
+        swModel.InsertSketch2 True
+
+        ' Slot rectangle centered at x=TRACK_WIDTH/2, z=SLOT_Y(i)
+        Dim sx As Double, sz1 As Double, sz2 As Double, sw2 As Double
+        sx  = TRACK_WIDTH / 2 * MM
+        sz1 = (slotZ - SLOT_H / 2 * MM)
+        sz2 = (slotZ + SLOT_H / 2 * MM)
+        sw2 = SLOT_W / 2 * MM
+
+        skMgr.CreateLine sx - sw2, sz1, 0, sx + sw2, sz1, 0
+        skMgr.CreateLine sx + sw2, sz1, 0, sx + sw2, sz2, 0
+        skMgr.CreateLine sx + sw2, sz2, 0, sx - sw2, sz2, 0
+        skMgr.CreateLine sx - sw2, sz2, 0, sx - sw2, sz1, 0
+
+        swModel.InsertSketch2 True
+
+        swModel.Extension.SelectByID2 "Sketch" & (i + 2), "SKETCH", 0, 0, 0, False, 0, Nothing, 0
+        Set swFeature = featMgr.FeatureCut2( _
+            False, False, False, _
+            swEndCondThroughAll, 0, _
+            0, 0, _
+            False, False, False, False, 0, 0, False, False, False, False, True, True, True, 0, 0, False, 0, 0, False, False)
+        swFeature.Name = "RollerSlot_" & SLOT_Y(i) & "mm"
+    Next i
+
+    ' ── FEATURE 3: WALL BRACKET BOLT HOLES ───────────────────────────────
+    Dim boltZ(2) As Double
+    boltZ(0) = 600 * MM
+    boltZ(1) = 1200 * MM
+    boltZ(2) = 1800 * MM
+
+    Dim j As Integer
+    For j = 0 To 2
+        swModel.ClearSelection2 True
+        swModel.Extension.SelectByID2 "", "FACE", TRACK_WIDTH / 2 * MM, 0, boltZ(j), False, 0, Nothing, 0
+        swModel.InsertSketch2 True
+
+        skMgr.CreateCircle TRACK_WIDTH / 2 * MM, 0, 0, (TRACK_WIDTH / 2 + BOLT_D / 2) * MM, 0, 0
+
+        swModel.InsertSketch2 True
+
+        swModel.Extension.SelectByID2 "Sketch" & (j + 6), "SKETCH", 0, 0, 0, False, 0, Nothing, 0
+        Set swFeature = featMgr.FeatureCut2( _
+            False, False, False, _
+            swEndCondThroughAll, 0, _
+            0, 0, _
+            False, False, False, False, 0, 0, False, False, False, False, True, True, True, 0, 0, False, 0, 0, False, False)
+        swFeature.Name = "BoltHole_M8_@" & (boltZ(j) / MM) & "mm"
+    Next j
+
+    ' ── MATERIAL ─────────────────────────────────────────────────────────
+    swPart.SetMaterialPropertyName2 "", "SolidWorks Materials", "Galvanized Steel"
+
+    ' ── CUSTOM PROPERTIES ─────────────────────────────────────────────────
+    Dim swCustProp As SldWorks.CustomPropertyManager
+    Set swCustProp = swModel.Extension.CustomPropertyManager("")
+    swCustProp.Add3 "Part_Number",  swCustomInfoText, "TR-001", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Description",  swCustomInfoText, "VERTICAL TRACK 76x32x3mm HDG 2285mm", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Material",     swCustomInfoText, "3mm HDG STEEL Z450 ASTM A653", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Finish",       swCustomInfoText, "HOT-DIP GALVANIZED Z450 — NO ADDITIONAL PAINT", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Qty_Per_Door", swCustomInfoText, "2 (LH + RH IDENTICAL)", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Make_Buy",     swCustomInfoText, "MAKE — PRESS BRAKE + DRILL", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Drawing_Ref",  swCustomInfoText, "GD-DWG-003", swCustomPropertyReplaceValue
+
+    swModel.ForceRebuild3 False
+
+    Dim savePath As String
+    savePath = Left(ThisDocument.Path, InStrRev(ThisDocument.Path, "\")) & "parts\GD-TR-001_Vertical_Track.SLDPRT"
+    bRet = swModel.SaveAs3(savePath, 0, 0)
+    If Not bRet Then
+        MsgBox "Part created. Save manually as GD-TR-001_Vertical_Track.SLDPRT", vbExclamation, "SmartLift Pro"
+    End If
+End Sub

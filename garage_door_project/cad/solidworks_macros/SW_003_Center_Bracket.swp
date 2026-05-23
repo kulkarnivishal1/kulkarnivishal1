@@ -1,0 +1,143 @@
+' ============================================================================
+' SmartLift Pro — SolidWorks VBA Macro
+' FILE: SW_003_Center_Bracket.swb
+' PART: Center / Header Bracket — 150×120×4mm, HDG steel
+'       Contains: Ø26.5 spring tube clearance, Ø52 bearing pocket H7,
+'                 4× Ø11mm lag bolt holes
+' ============================================================================
+
+Option Explicit
+
+Const BKT_W       As Double = 150    ' mm
+Const BKT_H       As Double = 120    ' mm
+Const BKT_T       As Double = 4      ' mm  plate thickness
+Const TUBE_CLR_D  As Double = 26.5   ' mm  spring tube clearance hole
+Const BEAR_D      As Double = 52     ' mm  6205 bearing OD pocket
+Const BEAR_DEPTH  As Double = 18     ' mm  bearing pocket depth
+Const BOLT_D_LAG  As Double = 11     ' mm  M10 lag bolt hole
+Const MM          As Double = 0.001
+
+Sub main()
+    Dim swApp       As SldWorks.SldWorks
+    Dim swModel     As SldWorks.ModelDoc2
+    Dim swPart      As SldWorks.PartDoc
+    Dim swFeature   As SldWorks.Feature
+    Dim skMgr       As SldWorks.SketchManager
+    Dim featMgr     As SldWorks.FeatureManager
+    Dim bRet        As Boolean
+
+    Set swApp   = Application.SldWorks
+    Set swModel = swApp.NewDocument( _
+        swApp.GetUserPreferenceStringValue(swUserPreferenceStringValue_e.swDefaultTemplatePart), _
+        0, 0, 0)
+    Set swPart  = swModel
+    Set skMgr   = swModel.SketchManager
+    Set featMgr = swModel.FeatureManager
+
+    ' ── FEATURE 1: PLATE BASE ────────────────────────────────────────────
+    swModel.Extension.SelectByID2 "Top Plane", "PLANE", 0, 0, 0, False, 0, Nothing, 0
+    swModel.InsertSketch2 True
+
+    skMgr.CreateCenterRectangle _
+        0, 0, 0, _
+        (BKT_W / 2) * MM, (BKT_H / 2) * MM, 0
+
+    swModel.InsertSketch2 True
+
+    swModel.Extension.SelectByID2 "Sketch1", "SKETCH", 0, 0, 0, False, 0, Nothing, 0
+    Set swFeature = featMgr.FeatureBoss2( _
+        False, False, False, swEndCondBlind, 0, _
+        BKT_T * MM, 0, _
+        False, False, False, False, 0, 0, False, False, False, False, True, True, True, 0, 0, False)
+    swFeature.Name = "Plate_4mm_HDG"
+
+    ' ── FEATURE 2: SPRING TUBE CLEARANCE HOLE (Ø26.5, through) ──────────
+    ' Centered on bracket face, at 45mm from bottom
+    swModel.ClearSelection2 True
+    swModel.Extension.SelectByID2 "Top@Plate_4mm_HDG", "FACE", 0, 0, BKT_T * MM, False, 0, Nothing, 0
+    swModel.InsertSketch2 True
+
+    skMgr.CreateCircle 0, (-BKT_H / 2 + 45) * MM, 0, _
+                       (TUBE_CLR_D / 2) * MM, (-BKT_H / 2 + 45) * MM, 0
+
+    swModel.InsertSketch2 True
+    swModel.Extension.SelectByID2 "Sketch2", "SKETCH", 0, 0, 0, False, 0, Nothing, 0
+    Set swFeature = featMgr.FeatureCut2( _
+        False, False, False, swEndCondThroughAll, 0, _
+        0, 0, False, False, False, False, 0, 0, False, False, False, False, True, True, True, 0, 0, False, 0, 0, False, False)
+    swFeature.Name = "SpringTube_Clearance_D26.5"
+
+    ' ── FEATURE 3: BEARING POCKET (Ø52, depth 18mm, H7 tolerance) ────────
+    swModel.ClearSelection2 True
+    swModel.Extension.SelectByID2 "Top@Plate_4mm_HDG", "FACE", 0, 0, BKT_T * MM, False, 0, Nothing, 0
+    swModel.InsertSketch2 True
+
+    skMgr.CreateCircle 0, (-BKT_H / 2 + 45) * MM, 0, _
+                       (BEAR_D / 2) * MM, (-BKT_H / 2 + 45) * MM, 0
+
+    swModel.InsertSketch2 True
+    swModel.Extension.SelectByID2 "Sketch3", "SKETCH", 0, 0, 0, False, 0, Nothing, 0
+    Set swFeature = featMgr.FeatureCut2( _
+        False, False, False, swEndCondBlind, 0, _
+        BEAR_DEPTH * MM, 0, _
+        False, False, False, False, 0, 0, False, False, False, False, True, True, True, 0, 0, False, 0, 0, False, False)
+    swFeature.Name = "BearingPocket_D52_H7_Depth18"
+
+    ' Add tolerance annotation note (done in drawing, not model)
+
+    ' ── FEATURE 4: 4× LAG BOLT HOLES (Ø11mm, through) ───────────────────
+    ' Positions: (±50, +30mm from top) and (±50, +60mm from top)
+    Dim boltPositions(3, 1) As Double
+    boltPositions(0, 0) = -50 * MM : boltPositions(0, 1) = (BKT_H / 2 - 20) * MM
+    boltPositions(1, 0) =  50 * MM : boltPositions(1, 1) = (BKT_H / 2 - 20) * MM
+    boltPositions(2, 0) = -50 * MM : boltPositions(2, 1) = (BKT_H / 2 - 50) * MM
+    boltPositions(3, 0) =  50 * MM : boltPositions(3, 1) = (BKT_H / 2 - 50) * MM
+
+    Dim k As Integer
+    For k = 0 To 3
+        swModel.ClearSelection2 True
+        swModel.Extension.SelectByID2 "Top@Plate_4mm_HDG", "FACE", 0, 0, BKT_T * MM, False, 0, Nothing, 0
+        swModel.InsertSketch2 True
+
+        skMgr.CreateCircle boltPositions(k, 0), boltPositions(k, 1), 0, _
+                           boltPositions(k, 0) + (BOLT_D_LAG / 2) * MM, boltPositions(k, 1), 0
+
+        swModel.InsertSketch2 True
+        swModel.Extension.SelectByID2 "Sketch" & (k + 4), "SKETCH", 0, 0, 0, False, 0, Nothing, 0
+        Set swFeature = featMgr.FeatureCut2( _
+            False, False, False, swEndCondThroughAll, 0, _
+            0, 0, False, False, False, False, 0, 0, False, False, False, False, True, True, True, 0, 0, False, 0, 0, False, False)
+        swFeature.Name = "LagBolt_M10_Hole_" & k
+    Next k
+
+    ' ── CHAMFER: ALL EDGES 0.5×45° ───────────────────────────────────────
+    ' (Select all edges — simplified: apply to outer perimeter edges)
+    ' swModel.Extension.SelectByID2... (edge selection in API requires face/edge refs)
+    ' Manual step: Add chamfer 0.5mm × 45° in SolidWorks after running macro
+
+    ' ── MATERIAL ─────────────────────────────────────────────────────────
+    swPart.SetMaterialPropertyName2 "", "SolidWorks Materials", "Galvanized Steel"
+
+    ' ── CUSTOM PROPERTIES ─────────────────────────────────────────────────
+    Dim swCustProp As SldWorks.CustomPropertyManager
+    Set swCustProp = swModel.Extension.CustomPropertyManager("")
+    swCustProp.Add3 "Part_Number",      swCustomInfoText, "SP-006", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Description",      swCustomInfoText, "CENTER BRACKET 150x120x4mm HDG", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Material",         swCustomInfoText, "4mm HDG MILD STEEL Z450", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Key_Feature_1",    swCustomInfoText, "D26.5 SPRING TUBE CLEARANCE ±0.2mm", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Key_Feature_2",    swCustomInfoText, "D52 BEARING POCKET H7 (6205-2RS PRESS FIT)", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Key_Feature_3",    swCustomInfoText, "4x D11 LAG BOLT HOLES FOR M10x80", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Tolerance_Pocket", swCustomInfoText, "D52 H7 = +0.030/+0.000mm", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Qty_Per_Door",     swCustomInfoText, "1", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Make_Buy",         swCustomInfoText, "MAKE — LASER CUT + MACHINE BEARING POCKET", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Drawing_Ref",      swCustomInfoText, "GD-DXF-004", swCustomPropertyReplaceValue
+
+    swModel.ForceRebuild3 False
+
+    Dim savePath As String
+    savePath = Left(ThisDocument.Path, InStrRev(ThisDocument.Path, "\")) & "parts\GD-SP-006_Center_Bracket.SLDPRT"
+    bRet = swModel.SaveAs3(savePath, 0, 0)
+    If Not bRet Then
+        MsgBox "Part created. Save as GD-SP-006_Center_Bracket.SLDPRT", vbExclamation, "SmartLift Pro"
+    End If
+End Sub

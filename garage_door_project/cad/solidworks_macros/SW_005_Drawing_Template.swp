@@ -1,0 +1,176 @@
+' ============================================================================
+' SmartLift Pro — SolidWorks VBA Macro
+' FILE: SW_005_Drawing_Template.swb
+' PURPOSE: Creates a SolidWorks drawing (SLDDRW) from a part file with:
+'          - ISO A1 sheet format
+'          - Standard views (Front, Top, Right, Isometric)
+'          - SmartLift Pro title block populated
+'          - BOM table (if assembly)
+'
+' USAGE: Open a part or assembly first, then run this macro.
+'        The drawing will be created with views of the active document.
+' ============================================================================
+
+Option Explicit
+
+Sub main()
+    Dim swApp       As SldWorks.SldWorks
+    Dim swModel     As SldWorks.ModelDoc2
+    Dim swDraw      As SldWorks.DrawingDoc
+    Dim swSheet     As SldWorks.Sheet
+    Dim swView      As SldWorks.View
+    Dim swNote      As SldWorks.Note
+    Dim bRet        As Boolean
+
+    Set swApp   = Application.SldWorks
+    Set swModel = swApp.ActiveDoc
+
+    If swModel Is Nothing Then
+        MsgBox "Open a part or assembly before running this macro.", _
+               vbExclamation, "SmartLift Pro"
+        Exit Sub
+    End If
+
+    Dim srcPath As String
+    srcPath = swModel.GetPathName
+
+    ' ── CREATE NEW DRAWING (A1 ISO, 841 × 594mm) ─────────────────────────
+    Dim drawTemplate As String
+    drawTemplate = swApp.GetUserPreferenceStringValue( _
+        swUserPreferenceStringValue_e.swDefaultTemplateDrawing)
+
+    Dim newDraw As SldWorks.ModelDoc2
+    Set newDraw = swApp.NewDocument(drawTemplate, swDwgPaperA1size, 0.841, 0.594)
+    Set swDraw  = newDraw
+
+    swDraw.SetupSheet5 "Sheet1", swDwgPaperA1size, _
+        swDwgTemplateA1, 1, 1, True, "", 0.841, 0.594, "", True
+
+    Set swSheet = swDraw.GetCurrentSheet
+
+    ' ── STANDARD VIEWS ───────────────────────────────────────────────────
+    ' Front view (projection)
+    Set swView = swDraw.CreateDrawViewFromModelView3( _
+        srcPath, "*Front", 0.15, 0.35, 0)
+    If Not swView Is Nothing Then
+        swView.ScaleRatio = Array(1, 10)   ' 1:10 default — adjust per drawing
+        swView.Name       = "Front View"
+    End If
+
+    ' Top view
+    Set swView = swDraw.CreateDrawViewFromModelView3( _
+        srcPath, "*Top", 0.15, 0.55, 0)
+    If Not swView Is Nothing Then
+        swView.Name = "Top View"
+    End If
+
+    ' Right side view
+    Set swView = swDraw.CreateDrawViewFromModelView3( _
+        srcPath, "*Right", 0.45, 0.35, 0)
+    If Not swView Is Nothing Then
+        swView.Name = "Right Side View"
+    End If
+
+    ' Isometric view
+    Set swView = swDraw.CreateDrawViewFromModelView3( _
+        srcPath, "*Isometric", 0.65, 0.55, 0)
+    If Not swView Is Nothing Then
+        swView.Name = "Isometric View"
+    End If
+
+    ' ── TITLE BLOCK POPULATION ───────────────────────────────────────────
+    ' Read custom properties from the source model
+    Dim srcModel As SldWorks.ModelDoc2
+    Set srcModel = swApp.GetOpenDocument(srcPath)
+
+    Dim swCustProp As SldWorks.CustomPropertyManager
+    Dim partNo As String, descr As String, matl As String, dwgRef As String
+    partNo  = ""
+    descr   = ""
+    matl    = ""
+    dwgRef  = ""
+
+    If Not srcModel Is Nothing Then
+        Set swCustProp = srcModel.Extension.CustomPropertyManager("")
+        Dim valOut As String, wasRes As Boolean
+        swCustProp.Get5 "Part_Number", False, "", valOut, wasRes
+        partNo = valOut
+        swCustProp.Get5 "Description", False, "", valOut, wasRes
+        descr = valOut
+        swCustProp.Get5 "Material", False, "", valOut, wasRes
+        matl = valOut
+        swCustProp.Get5 "Drawing_Ref", False, "", valOut, wasRes
+        dwgRef = valOut
+    End If
+
+    ' Add title block text notes (positioned for A1 ISO layout)
+    ' Note: For custom sheet formats use swDraw.SetupSheet and template .slddrt file
+    '       These notes are placed at approximate title block positions.
+
+    Dim notePos(1) As Double
+    Const titleX As Double = 0.55
+    Const titleY As Double = 0.03
+
+    ' Project name
+    notePos(0) = titleX : notePos(1) = titleY + 0.055
+    swDraw.InsertNote "SmartLift Pro — Motorized Sectional Garage Door"
+    swDraw.GetCurrentSheet.Select False
+
+    ' Drawing title
+    notePos(0) = titleX : notePos(1) = titleY + 0.040
+    swDraw.InsertNote descr
+
+    ' Drawing number
+    notePos(0) = titleX : notePos(1) = titleY + 0.025
+    swDraw.InsertNote "DWG No: " & dwgRef & "   PART: " & partNo
+
+    ' Material
+    notePos(0) = titleX + 0.12 : notePos(1) = titleY + 0.025
+    swDraw.InsertNote "MATERIAL: " & matl
+
+    ' Date + Revision
+    notePos(0) = titleX + 0.12 : notePos(1) = titleY + 0.012
+    swDraw.InsertNote "Date: 2026-05-23   Rev: A   Units: mm"
+
+    ' General tolerance note
+    notePos(0) = 0.02 : notePos(1) = titleY + 0.025
+    swDraw.InsertNote "UNLESS OTHERWISE STATED:" & Chr(13) & _
+        "LINEAR TOL: ±0.5mm" & Chr(13) & _
+        "ANGULAR TOL: ±0.5°" & Chr(13) & _
+        "SURFACE FINISH: Ra 3.2 μm" & Chr(13) & _
+        "ALL DIMS IN MILLIMETRES"
+
+    ' ── BOM TABLE (for assemblies) ────────────────────────────────────────
+    If swModel.GetType = swDocASSEMBLY Then
+        Dim bomOpt As SldWorks.BomTableAnnotation
+        ' Insert BOM — top-level only, part number + description + qty
+        swDraw.InsertBomTable4 False, 0, swBomType_TopLevelOnly, _
+            "BOM1", "", False, swNumberingType_Detailed, True, Nothing
+    End If
+
+    ' ── REBUILD ──────────────────────────────────────────────────────────
+    newDraw.ForceRebuild3 False
+
+    ' Save
+    Dim drawSave As String
+    If dwgRef <> "" Then
+        drawSave = Left(ThisDocument.Path, InStrRev(ThisDocument.Path, "\")) & _
+                   "drawings\" & dwgRef & "_" & partNo & ".SLDDRW"
+    Else
+        drawSave = Left(ThisDocument.Path, InStrRev(ThisDocument.Path, "\")) & _
+                   "drawings\SmartLift_Drawing.SLDDRW"
+    End If
+
+    bRet = newDraw.SaveAs3(drawSave, 0, 0)
+
+    MsgBox "Drawing created with 4 standard views." & vbCrLf & _
+           "Views: Front, Top, Right, Isometric" & vbCrLf & vbCrLf & _
+           "RECOMMENDED NEXT STEPS:" & vbCrLf & _
+           "1. Adjust view scale (right-click view → Properties → Scale)" & vbCrLf & _
+           "2. Add centre lines: Insert → Annotations → Centreline" & vbCrLf & _
+           "3. Add dimensions: Smart Dimension tool (D key)" & vbCrLf & _
+           "4. Add GD&T tolerances via Annotations → Geometric Tolerance" & vbCrLf & _
+           "5. Add section views where specified in drawing register" & vbCrLf & _
+           "6. Export to PDF: File → Save As → PDF (for issue)", _
+           vbInformation, "SmartLift Pro — Drawing Created"
+End Sub

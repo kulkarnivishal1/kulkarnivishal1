@@ -1,0 +1,207 @@
+' ============================================================================
+' SmartLift Pro — SolidWorks VBA Macro
+' FILE: SW_001_Panel_Part.swb
+' PART: Door Panel (single section) — 2540 × 533 × 40mm
+' PURPOSE: Creates a parametric SolidWorks part for the insulated door panel.
+'
+' HOW TO RUN:
+'   1. Open SolidWorks
+'   2. Tools → Macros → Run
+'   3. Select this file (SW_001_Panel_Part.swb)
+'   4. A new part will be created with all features
+'
+' PARAMETERS: Modify the constants below before running to resize.
+' ============================================================================
+
+Option Explicit
+
+' ── PARAMETERS (modify here to resize) ──────────────────────────────────────
+Const PANEL_WIDTH   As Double = 2540   ' mm  — door width
+Const PANEL_HEIGHT  As Double = 533    ' mm  — single section height
+Const PANEL_THICK   As Double = 40     ' mm  — overall thickness
+Const SKIN_OUTER    As Double = 0.45   ' mm  — outer PPGI skin
+Const SKIN_INNER    As Double = 0.40   ' mm  — inner GI skin
+Const TONGUE_W      As Double = 10     ' mm  — tongue width
+Const TONGUE_H      As Double = 8      ' mm  — tongue protrusion
+Const GROOVE_W      As Double = 12     ' mm  — groove width
+Const GROOVE_H      As Double = 10     ' mm  — groove depth
+
+' ── UNIT CONVERSION ──────────────────────────────────────────────────────────
+' SolidWorks API uses METRES internally
+Const MM As Double = 0.001
+
+Sub main()
+    Dim swApp       As SldWorks.SldWorks
+    Dim swModel     As SldWorks.ModelDoc2
+    Dim swPart      As SldWorks.PartDoc
+    Dim swSketch    As SldWorks.Sketch
+    Dim swFeature   As SldWorks.Feature
+    Dim swSelMgr    As SldWorks.SelectionMgr
+    Dim bRet        As Boolean
+
+    Set swApp = Application.SldWorks
+
+    ' Create new part document
+    swModel = swApp.NewDocument( _
+        swApp.GetUserPreferenceStringValue(swUserPreferenceStringValue_e.swDefaultTemplatePart), _
+        0, 0, 0)
+    Set swPart = swModel
+
+    swModel.SetUnits swUNITS_MM, swUNITS_MM, 1, 1
+
+    ' ── FEATURE 1: OUTER SKIN EXTRUSION ──────────────────────────────────
+    ' Select Top plane, open sketch
+    swModel.Extension.SelectByID2 "Top Plane", "PLANE", 0, 0, 0, False, 0, Nothing, 0
+    swModel.InsertSketch2 True
+
+    ' Draw rectangle for outer skin footprint
+    Dim skMgr As SldWorks.SketchManager
+    Set skMgr = swModel.SketchManager
+    skMgr.CreateCenterRectangle _
+        0, 0, 0, _
+        (PANEL_WIDTH / 2) * MM, (PANEL_HEIGHT / 2) * MM, 0
+
+    swModel.InsertSketch2 True  ' close sketch
+
+    ' Extrude outer skin
+    Dim featMgr As SldWorks.FeatureManager
+    Set featMgr = swModel.FeatureManager
+    swModel.Extension.SelectByID2 "Sketch1", "SKETCH", 0, 0, 0, False, 0, Nothing, 0
+    Set swFeature = featMgr.FeatureBoss2( _
+        False, False, False, _
+        swEndCondBlind, 0, _
+        SKIN_OUTER * MM, 0, _
+        False, False, False, False, 0, 0, False, False, False, False, True, True, True, 0, 0, False)
+    swFeature.Name = "OuterSkin_0.45mm_PPGI"
+
+    ' ── FEATURE 2: PU FOAM CORE EXTRUSION ────────────────────────────────
+    ' Select outer skin top face, sketch foam area
+    swModel.ClearSelection2 True
+    swModel.Extension.SelectByID2 "Top@OuterSkin_0.45mm_PPGI", "FACE", 0, 0, SKIN_OUTER * MM, False, 0, Nothing, 0
+    swModel.InsertSketch2 True
+
+    skMgr.CreateCenterRectangle _
+        0, 0, 0, _
+        (PANEL_WIDTH / 2) * MM, (PANEL_HEIGHT / 2) * MM, 0
+
+    swModel.InsertSketch2 True
+
+    swModel.Extension.SelectByID2 "Sketch2", "SKETCH", 0, 0, 0, False, 0, Nothing, 0
+    Set swFeature = featMgr.FeatureBoss2( _
+        False, False, False, _
+        swEndCondBlind, 0, _
+        (PANEL_THICK - SKIN_OUTER - SKIN_INNER) * MM, 0, _
+        False, False, False, False, 0, 0, False, False, False, False, True, True, True, 0, 0, False)
+    swFeature.Name = "FoamCore_36mm_PU"
+
+    ' ── FEATURE 3: INNER SKIN EXTRUSION ──────────────────────────────────
+    Dim foamTopZ As Double
+    foamTopZ = (SKIN_OUTER + PANEL_THICK - SKIN_OUTER - SKIN_INNER) * MM
+
+    swModel.ClearSelection2 True
+    swModel.Extension.SelectByID2 "Top@FoamCore_36mm_PU", "FACE", 0, 0, foamTopZ, False, 0, Nothing, 0
+    swModel.InsertSketch2 True
+
+    skMgr.CreateCenterRectangle _
+        0, 0, 0, _
+        (PANEL_WIDTH / 2) * MM, (PANEL_HEIGHT / 2) * MM, 0
+
+    swModel.InsertSketch2 True
+
+    swModel.Extension.SelectByID2 "Sketch3", "SKETCH", 0, 0, 0, False, 0, Nothing, 0
+    Set swFeature = featMgr.FeatureBoss2( _
+        False, False, False, _
+        swEndCondBlind, 0, _
+        SKIN_INNER * MM, 0, _
+        False, False, False, False, 0, 0, False, False, False, False, True, True, True, 0, 0, False)
+    swFeature.Name = "InnerSkin_0.40mm_GI"
+
+    ' ── FEATURE 4: TONGUE (top edge) ─────────────────────────────────────
+    ' Select top face, add tongue profile
+    swModel.ClearSelection2 True
+    swModel.Extension.SelectByID2 "Front Plane", "PLANE", 0, 0, 0, False, 0, Nothing, 0
+    swModel.InsertSketch2 True
+
+    ' Tongue cross-section centered on thickness
+    Dim tx As Double
+    tx = (PANEL_THICK / 2 - TONGUE_W / 2) * MM
+    skMgr.CreateLine tx, (PANEL_HEIGHT / 2) * MM, 0, _
+                     tx, (PANEL_HEIGHT / 2 + TONGUE_H) * MM, 0
+    skMgr.CreateLine tx, (PANEL_HEIGHT / 2 + TONGUE_H) * MM, 0, _
+                     (tx + TONGUE_W * MM), (PANEL_HEIGHT / 2 + TONGUE_H) * MM, 0
+    skMgr.CreateLine (tx + TONGUE_W * MM), (PANEL_HEIGHT / 2 + TONGUE_H) * MM, 0, _
+                     (tx + TONGUE_W * MM), (PANEL_HEIGHT / 2) * MM, 0
+
+    swModel.InsertSketch2 True
+
+    swModel.Extension.SelectByID2 "Sketch4", "SKETCH", 0, 0, 0, False, 0, Nothing, 0
+    Set swFeature = featMgr.FeatureExtrusion2( _
+        False, False, False, _
+        swEndCondBlind, 0, _
+        PANEL_WIDTH * MM, 0, _
+        False, False, False, False, 0, 0, False, False, False, False, True, True, True, 0, 0, False)
+    swFeature.Name = "Tongue_Top_10x8mm"
+
+    ' ── FEATURE 5: GROOVE (bottom edge) ──────────────────────────────────
+    swModel.Extension.SelectByID2 "Front Plane", "PLANE", 0, 0, 0, False, 0, Nothing, 0
+    swModel.InsertSketch2 True
+
+    Dim gx As Double
+    gx = (PANEL_THICK / 2 - GROOVE_W / 2) * MM
+    skMgr.CreateLine gx, (-PANEL_HEIGHT / 2) * MM, 0, _
+                     gx, (-PANEL_HEIGHT / 2 + GROOVE_H) * MM, 0
+    skMgr.CreateLine gx, (-PANEL_HEIGHT / 2 + GROOVE_H) * MM, 0, _
+                     (gx + GROOVE_W * MM), (-PANEL_HEIGHT / 2 + GROOVE_H) * MM, 0
+    skMgr.CreateLine (gx + GROOVE_W * MM), (-PANEL_HEIGHT / 2 + GROOVE_H) * MM, 0, _
+                     (gx + GROOVE_W * MM), (-PANEL_HEIGHT / 2) * MM, 0
+
+    swModel.InsertSketch2 True
+
+    swModel.Extension.SelectByID2 "Sketch5", "SKETCH", 0, 0, 0, False, 0, Nothing, 0
+    Set swFeature = featMgr.FeatureCut2( _
+        False, False, False, _
+        swEndCondBlind, 0, _
+        PANEL_WIDTH * MM, 0, _
+        False, False, False, False, 0, 0, False, False, False, False, True, True, True, 0, 0, False, 0, 0, False, False)
+    swFeature.Name = "Groove_Bottom_12x10mm"
+
+    ' ── MATERIAL ASSIGNMENT ───────────────────────────────────────────────
+    ' Note: Multi-body material assignment requires body selection
+    ' Assign PPGI (use pre-painted steel as proxy) to part
+    swPart.SetMaterialPropertyName2 "", "SolidWorks Materials", "Galvanized Steel"
+
+    ' ── APPEARANCES ───────────────────────────────────────────────────────
+    ' RAL 7016 Anthracite Grey = RGB (37, 42, 52)
+    ' Set via: Tools > Appearances (manual step — API appearance assignment varies by SW version)
+
+    ' ── CUSTOM PROPERTIES ─────────────────────────────────────────────────
+    Dim swCustProp As SldWorks.CustomPropertyManager
+    Set swCustProp = swModel.Extension.CustomPropertyManager("")
+    swCustProp.Add3 "Part_Number",   swCustomInfoText,  "DP-001", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Description",   swCustomInfoText,  "INSULATED DOOR PANEL 2540x533x40mm", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Material_Outer",swCustomInfoText,  "0.45mm PPGI Z275 RAL7016", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Material_Core", swCustomInfoText,  "40mm PU FOAM CFC-FREE 40kg/m3", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Material_Inner",swCustomInfoText,  "0.40mm GI Z200", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Finish",        swCustomInfoText,  "RAL 7016 ANTHRACITE GREY PVDF", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Mass_kg",       swCustomInfoText,  "18", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Supplier",      swCustomInfoText,  "BUY-OUT — LOCAL OEM / HORMANN", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Qty_Per_Door",  swCustomInfoText,  "4", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Project",       swCustomInfoText,  "SmartLift Pro GD-001", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Drawing_Ref",   swCustomInfoText,  "GD-DWG-002", swCustomPropertyReplaceValue
+
+    ' ── REBUILD AND SAVE ──────────────────────────────────────────────────
+    swModel.ForceRebuild3 False
+    swModel.SetSaveFlag
+
+    ' Save to same folder as macro
+    Dim savePath As String
+    savePath = Left(ThisDocument.Path, InStrRev(ThisDocument.Path, "\")) & "parts\GD-DP-001_Panel.SLDPRT"
+
+    bRet = swModel.SaveAs3(savePath, 0, 0)
+    If bRet Then
+        MsgBox "Panel part saved to:" & vbCrLf & savePath, vbInformation, "SmartLift Pro"
+    Else
+        MsgBox "Part created. Please save manually to your project folder.", vbExclamation, "SmartLift Pro"
+    End If
+
+End Sub
