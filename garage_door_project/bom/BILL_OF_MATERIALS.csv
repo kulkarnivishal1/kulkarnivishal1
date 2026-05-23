@@ -1,0 +1,71 @@
+BOM No.,Assembly,Sub-Assembly,Part No.,Description,Qty,Unit,Material / Spec,Make/Buy,Preferred Supplier (India),Preferred Supplier (Global),Unit Cost USD,Unit Cost INR,Total USD,Total INR,Notes
+1,DOOR PANEL ASSY,Panels,DP-001,Insulated sandwich panel 2540×533×40mm,4,pcs,0.45mm PPGI outer + 0.40mm GI inner + 40mm PU foam | RAL 7016,Buy,Dorset Industries / Fenesta / local OEM,Hörmann / Novoferm / local roll-former,$85,$7100,$340,$28400,Bottom section to have Al astragal slot
+2,DOOR PANEL ASSY,Panels,DP-002,Bottom astragal (extruded Al 6063-T5 2540mm) + EPDM D-seal,1,set,Al 6063-T5 + EPDM co-extrusion,Buy,Hindalco / Jindal Aluminium / local,Frost King / Pemko,$18,$1500,$18,$1500,Drill and screw to bottom section
+3,DOOR PANEL ASSY,Seals,DP-003,Side seal – EPDM brush strip 2135mm (pair),1,pair,EPDM rubber,Buy,Rubfila / Elasto / local rubber extrusion,Thermwell / M-D Building Products,$12,$1000,$12,$1000,Nail to door jamb
+4,DOOR PANEL ASSY,Seals,DP-004,Top seal – EPDM bulb seal 2540mm,1,pcs,EPDM rubber,Buy,Rubfila / local,Frost King / Pemko,$8,$670,$8,$670,Mounted to header
+5,TRACK SYSTEM,Vertical track,TR-001,Vertical track 76×32×3mm channel HDG – 2285mm lg.,2,pcs,3mm HDG steel (Z450),Make / Buy,Bharat Industries / local fabrication,Wayne Dalton track / local steel,$28,$2340,$56,$4680,Drill and slot for rollers at 533mm c/c
+6,TRACK SYSTEM,Horizontal track,TR-002,Horizontal track 76×32×3mm channel HDG – 2435mm lg.,2,pcs,3mm HDG steel (Z450),Make / Buy,Same as TR-001,Same as TR-001,$25,$2090,$50,$4180,Slope: 2° down from header
+7,TRACK SYSTEM,Curved section,TR-003,Curved track section 90° R=305mm 76×32mm,2,pcs,3mm HDG steel (Z450),Buy,Speciality Garage Fittings / import,Wayne Dalton / Raynor,$30,$2510,$60,$5020,Standard 2-inch radius track
+8,TRACK SYSTEM,Brackets,TR-004,Wall angle bracket 100×50×3mm HDG – adjustable,8,pcs,3mm HDG steel,Make,Local fabrication / laser cut,Hardware store,$3,$250,$24,$2000,3 bolt holes + slot for adjustment
+9,TRACK SYSTEM,Brackets,TR-005,Horizontal flag angle 75×50×3mm HDG,6,pcs,3mm HDG steel,Make,Local fabrication,Hardware store,$2,$170,$12,$1020,Ceiling mount for horizontal track
+10,TRACK SYSTEM,Brackets,TR-006,Header bracket (center) 150×100×4mm HDG,1,pcs,4mm HDG steel,Make,Local fabrication,Hardware store,$8,$670,$8,$670,Mounts spring center bearing + drum bearing
+11,TRACK SYSTEM,Stops,TR-007,Track end stop with bolt (rubber pad),4,pcs,3mm steel + rubber pad,Buy,Local hardware,LiftMaster / local,$2,$170,$8,$680,Prevents trolley overrun
+12,HINGE SYSTEM,Section hinges,HN-001,Section hinge #1 (between panels) 150mm 14ga zinc,12,pcs,14 gauge (2mm) steel | zinc plated ASTM B633,Buy,Clix / National Hardware India / import,National Manufacturing / Stanley,$3,$250,$36,$3000,4 per joint × 3 joints
+13,HINGE SYSTEM,End hinges,HN-002,End hinge top section – roller only 14ga,2,pcs,14 gauge steel | zinc plated,Buy,Same as HN-001,Same as HN-001,$4,$335,$8,$670,
+14,HINGE SYSTEM,End hinges,HN-003,End hinge middle sections – roller + mount 14ga,6,pcs,14 gauge steel | zinc plated,Buy,Same as HN-001,Same as HN-001,$4,$335,$24,$2010,2 per side × sections 1-3
+15,HINGE SYSTEM,End hinges,HN-004,End hinge bottom section – cable attachment 14ga,2,pcs,14 gauge steel | zinc plated,Buy,Same as HN-001,Same as HN-001,$5,$418,$10,$836,Cable hole + roller socket
+16,HINGE SYSTEM,Rollers,HN-005,Nylon roller 2-inch dia | 10-ball bearing | 100mm stem,10,pcs,Nylon rim + steel core + ZnCr stem,Buy,National Hardware / import,Ideal Door parts / Ideal Security,$4,$335,$40,$3350,Standard 2" stem roller
+17,HINGE SYSTEM,Rollers,HN-006,Nylon roller 2-inch dia | short 4-inch stem – top roller,2,pcs,Nylon rim + steel core + ZnCr stem,Buy,Same as HN-005,Same as HN-005,$4,$335,$8,$670,
+18,HINGE SYSTEM,Hardware,HN-007,Hinge pin Ø8×40mm + cotter pin,12,pcs,Cold-rolled steel | zinc,Buy,Local hardware,Local hardware,$1,$84,$12,$1008,
+19,SPRING SYSTEM,Springs,SP-001,Torsion spring LH (left-wound) | d=6.5mm ID=102mm L=965mm,1,pcs,High-carbon steel ASTM A227 | shot-peened | 10000-cycle,Buy,Veer Garage Springs / import,DDM Garage Doors / National Spring,$35,$2925,$35,$2925,Specify IPPT and turns to supplier
+20,SPRING SYSTEM,Springs,SP-002,Torsion spring RH (right-wound) | same spec as SP-001,1,pcs,High-carbon steel ASTM A227 | shot-peened | 10000-cycle,Buy,Veer Garage Springs / import,DDM Garage Doors / National Spring,$35,$2925,$35,$2925,
+21,SPRING SYSTEM,Spring tube,SP-003,Spring tube 25.4mm OD × 2.5mm wall × 1600mm ERW,1,pcs,ERW steel ASTM A513 | zinc phos. + oil,Make / Buy,Local steel supplier | cut to length,Local steel supplier,$12,$1003,$12,$1003,
+22,SPRING SYSTEM,Bearing,SP-004,Bearing plate (flanged) 25.4mm bore 4mm steel (pair),1,pair,4mm cold-rolled steel | zinc plated,Make / Buy,Local fabrication,Haas Door / local,$10,$836,$10,$836,
+23,SPRING SYSTEM,Bearing,SP-005,End bearing 6205-2RS (25mm bore 52mm OD),2,pcs,Steel | rubber seal,Buy,SKF India / FAG India / NBC,SKF / FAG / NSK,$5,$418,$10,$836,Standard 6205 ball bearing
+24,SPRING SYSTEM,Center bracket,SP-006,Center bracket (wall/header mount) 4mm steel HDG,1,pcs,4mm HDG steel,Make,Local fabrication,Local fabrication,$8,$670,$8,$670,Mounts spring tube midpoint
+25,SPRING SYSTEM,Safety,SP-007,Safety cable Ø6mm 7×7 galv. wire rope 1000mm (inside spring),2,pcs,Galv. wire rope ASTM A603,Buy,Local wire rope supplier,Local hardware,$5,$418,$10,$836,Prevents spring whip on breakage
+26,CABLE DRUM,Drums,CD-001,Cable drum LH – die-cast Al ADC12 | 76mm pitch dia,1,pcs,Al die-cast ADC12 | anodized,Buy,Import / local casting,Chamberlain / Haas / DDM,$14,$1170,$14,$1170,
+27,CABLE DRUM,Drums,CD-002,Cable drum RH – mirror of CD-001,1,pcs,Al die-cast ADC12 | anodized,Buy,Import / local casting,Chamberlain / Haas / DDM,$14,$1170,$14,$1170,
+28,CABLE DRUM,Bottom brackets,CD-003,Bottom bracket (cable end) 14ga stamped (pair),1,pair,14 gauge steel | zinc plated,Buy,Import / local,National Manufacturing,$8,$670,$8,$670,
+29,CABLE DRUM,Lift cable,CD-004,Lift cable 3/32-inch 7×7 galv. ASTM A603 | 2600mm (pair),1,pair,Galv. wire rope | swaged eye one end,Buy,Local wire rope / import,Ideal Door / local,$10,$836,$10,$836,
+30,OPERATOR UNIT,Motor,MO-001,BLDC motor 375W 24V 3000RPM – IP44,1,pcs,BLDC | IP44 | PTC thermistor,Buy,Orient / Havells / Nidec India,Chamberlain / LiftMaster (OEM motor),$85,$7100,$85,$7100,Alt: ½HP PSC AC motor 230V ($55) for simpler proto
+31,OPERATOR UNIT,Gearbox,MO-002,Worm gearbox 30:1 ratio – foot/flange mount,1,pcs,Cast iron housing | steel worm | bronze wheel,Buy,Bonfiglioli India / Rexnord,Bonfiglioli / Leroy-Somer,$55,$4595,$55,$4595,Output: 100 RPM at rated torque
+32,OPERATOR UNIT,Rail,MO-003,T-bar drive rail extruded Al 6063-T5 – 2700mm,1,pcs,Al 6063-T5 extrusion,Buy,Jindal Aluminium / Hindalco,Chamberlain G-series rail / LiftMaster,$30,$2508,$30,$2508,
+33,OPERATOR UNIT,Belt,MO-004,Timing belt 8mm pitch 20mm wide | closed loop 5800mm,1,pcs,Polyurethane + Kevlar cord reinforced,Buy,Gates India / PIX Transmissions,Gates / Optibelt,$22,$1839,$22,$1839,
+34,OPERATOR UNIT,Sprockets,MO-005,Drive sprocket 8mm pitch 20T Al alloy,1,pcs,Al alloy 6061,Buy,PIX / local,Browning / Martin,$12,$1003,$12,$1003,
+35,OPERATOR UNIT,Sprockets,MO-006,Idler sprocket 8mm pitch 20T nylon | free-wheeling,1,pcs,Nylon PA66 | steel hub,Buy,PIX / local,Browning / Martin,$10,$836,$10,$836,
+36,OPERATOR UNIT,Trolley,MO-007,Trolley body die-cast Al | 4× nylon guide wheels,1,pcs,Al die-cast + nylon wheels,Buy,Import / local,LiftMaster / Chamberlain OEM,$25,$2090,$25,$2090,
+37,OPERATOR UNIT,Trolley arm,MO-008,Drive arm Ø16mm steel rod 300mm | quick release T-handle,1,pcs,Cold-rolled steel | zinc | red T-handle PA6,Make / Buy,Local fabrication / import,LiftMaster OEM,$10,$836,$10,$836,
+38,OPERATOR UNIT,Mounts,MO-009,Ceiling mounting bracket set (3 off) – 3mm steel,1,set,3mm cold-rolled steel | zinc,Make,Local fabrication,Local fabrication,$15,$1254,$15,$1254,
+39,CONTROL SYSTEM,MCU,CS-001,ESP32-WROOM-32 development board,1,pcs,ESP32 SoC | WiFi 2.4GHz | BT | 38-pin dev board,Buy,Robu.in / Rajguru Electronics,Amazon / AliExpress / DigiKey,$8,$669,$8,$669,
+40,CONTROL SYSTEM,Motor driver,CS-002,BTS7960 43A H-Bridge motor driver module,1,pcs,BTS7960B IC | PCB module | 6-27V,Buy,Robu.in / Rajguru,Amazon / AliExpress,$10,$836,$10,$836,
+41,CONTROL SYSTEM,Power supply,CS-003,Mean Well DR-60-12 (12V 5A DIN rail SMPS),1,pcs,Input: 85-264V AC | Output: 12V 5A,Buy,ACDC India / Elmec Electronics,DigiKey / Mouser,$32,$2675,$32,$2675,
+42,CONTROL SYSTEM,Power supply,CS-004,Step-down converter 12V→5V 3A (LM2596 module),1,pcs,LM2596 module,Buy,Robu.in,Amazon / AliExpress,$2,$167,$2,$167,
+43,CONTROL SYSTEM,Battery,CS-005,SLA battery 12V 7AH (backup power),1,pcs,Sealed lead-acid | 12V 7AH,Buy,Amaron / Exide / Su-Kam,Yuasa / Interstate,$18,$1505,$18,$1505,
+44,CONTROL SYSTEM,Battery,CS-006,Battery charging module (12V SLA trickle charger),1,pcs,Float charge 13.8V 500mA,Buy,Robu.in / import,Amazon,$5,$418,$5,$418,
+45,CONTROL SYSTEM,RF,CS-007,433MHz RF receiver module superheterodyne (RXB6),1,pcs,Superheterodyne | SPI,Buy,Robu.in / import,RF Solutions / AliExpress,$4,$335,$4,$335,
+46,CONTROL SYSTEM,RF,CS-008,433MHz rolling-code RF remote (2-channel),2,pcs,Keeloq encoding | 23A battery | 50m range,Buy,Import / Sesamatics,Amazon / CAME / BFT OEM,$8,$669,$16,$1338,2 remotes for prototype
+47,CONTROL SYSTEM,Sensors,CS-009,Photo-eye IR break-beam sensor pair (8-10m range),1,pair,Active IR | NPN output | 12V powered,Buy,Zicom / Robu.in / import,LiftMaster 41A4373 / Mighty Mule,$15,$1254,$15,$1254,
+48,CONTROL SYSTEM,Sensors,CS-010,Hall effect sensor AH49E (limit switch),2,pcs,AH49E | SOT-89 or TO-92 | 3-pin,Buy,Robu.in / import,DigiKey / Mouser,$1,$84,$2,$168,Open + close position detection
+49,CONTROL SYSTEM,Sensors,CS-011,Neodymium magnet Ø10×5mm (trolley position flag),2,pcs,N35 neodymium,Buy,Magnets India / import,Amazon,$1,$84,$2,$168,Triggers hall sensors
+50,CONTROL SYSTEM,PCB,CS-012,Custom PCB 100×80mm 2-layer HASL (5 boards fabr.),1,lot,FR4 1.6mm | 2oz copper | HASL | green mask,Buy,PCBWay / JLCPCB,JLCPCB / PCBWay,$12,$1003,$12,$1003,Qty 5 boards (proto run)
+51,CONTROL SYSTEM,Enclosure,CS-013,ABS electrical enclosure IP54 | 160×120×60mm,1,pcs,ABS | IP54 | clear lid,Buy,Havells / Hager / BCH,Hammond / Fibox,$15,$1254,$15,$1254,
+52,CONTROL SYSTEM,Components,CS-014,Electronic components (resistors/caps/diodes/TVS/relay),1,lot,Standard SMD + through-hole components,Buy,Robu.in / Rajguru / Mouser India,DigiKey / Mouser / RS,$20,$1672,$20,$1672,TVS protection + filter caps
+53,CONTROL SYSTEM,Wiring,CS-015,Wiring harness – cables + connectors + terminals,1,lot,18 AWG + 22 AWG shielded | JST connectors | crimp,Buy,Cabcon / Lapp India / local,Molex / JST,$22,$1839,$22,$1839,Pre-cut + labeled per wiring diagram
+54,CONTROL SYSTEM,Indicator,CS-016,LED status indicator panel (RGB tri-color),1,pcs,RGB LED + diffuser lens | panel-mount,Buy,Robu.in,Mouser,$3,$251,$3,$251,
+55,CONTROL SYSTEM,Buzzer,CS-017,Piezo buzzer 5V 85dB panel mount,1,pcs,Active buzzer | 5V,Buy,Robu.in,DigiKey,$1,$84,$1,$84,
+56,CONTROL SYSTEM,Fusing,CS-018,Fuse holder + 5A fuse (motor rail),1,pcs,Panel mount | 5A glass fuse | IP44,Buy,Hager / local,Schurter / Littelfuse,$3,$251,$3,$251,
+57,FASTENERS,Structural,FT-001,Hex bolt M8×25 Grade 8.8 HDG (bag of 50),1,bag,ISO 4014 | Grade 8.8 | HDG,Buy,Unbrako / Elgin / local,Unbrako / local,$8,$669,$8,$669,
+58,FASTENERS,Structural,FT-002,Hex bolt M10×35 Grade 8.8 HDG,12,pcs,ISO 4014 | Grade 8.8 | HDG,Buy,Same as FT-001,Same as FT-001,$1,$84,$12,$1008,Track-to-bracket bolts
+59,FASTENERS,Structural,FT-003,Spring washer M8 HDG,50,pcs,ISO 7090 | HDG,Buy,Local hardware,Local hardware,$4,$335,$4,$335,Bag
+60,FASTENERS,Structural,FT-004,Flat washer M8 HDG,50,pcs,ISO 7089 | HDG,Buy,Local hardware,Local hardware,$3,$251,$3,$251,Bag
+61,FASTENERS,Structural,FT-005,Nyloc nut M8 zinc,50,pcs,ISO 7042 | zinc plated,Buy,Local hardware,Local hardware,$4,$335,$4,$335,Bag
+62,FASTENERS,Structural,FT-006,Nyloc nut M10 zinc,12,pcs,ISO 7042 | zinc plated,Buy,Local hardware,Local hardware,$2,$167,$2,$167,
+63,FASTENERS,Structural,FT-007,Lag screw hex head 6×60mm zinc,12,pcs,DIN 571 | zinc,Buy,Local hardware,Local hardware,$3,$251,$3,$251,For ceiling/wall mount
+64,FASTENERS,Structural,FT-008,Wall anchor M10 concrete (Fischer FUR or equiv.),12,pcs,Nylon expansion anchor,Buy,Fischer India / Hilti India,Fischer / Hilti,$1,$84,$12,$1008,For wall mount on concrete
+65,FASTENERS,Panel,FT-009,Self-drill screw hex washer 5×16mm ZnCr,50,pcs,DIN 7504N | zinc-chromate,Buy,Elgin / local,Local hardware,$4,$335,$4,$335,Panel + track assembly
+66,FASTENERS,Operator,FT-010,Set screw M8×20mm cup point Grade 12.9,4,pcs,ISO 4026 | Grade 12.9 | oxide,Buy,Local hardware,Local hardware,$1,$84,$4,$336,Cable drum locking
+67,CONSUMABLES,Lubricant,CN-001,White lithium grease 150g (rollers + hinges),1,tube,White lithium grease,Buy,WD-40 / Castrol India,WD-40 / Blaster,$5,$418,$5,$418,
+68,CONSUMABLES,Lubricant,CN-002,Silicone spray 400mL (belt + seal lubrication),1,can,Silicone lubricant,Buy,WD-40 / local,WD-40 / CRC,$6,$502,$6,$502,
+69,CONSUMABLES,Sealant,CN-003,Clear silicone RTV sealant 100g (enclosure sealing),1,tube,RTV silicone | clear,Buy,Fevikwik / Pidilite / Dowsil,Dowsil / Henkel,$4,$335,$4,$335,
+70,CONSUMABLES,Marking,CN-004,Warning / instruction labels (laser-printed laminated),1,set,Laminated polyester | adhesive backed,Make / Buy,Local print / Rotatrim,Local print,$5,$418,$5,$418,CAUTION spring tension | operating instructions
