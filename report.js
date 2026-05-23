@@ -214,6 +214,30 @@ function generatePdfReport(meta, result, charts) {
     });
   }
 
+  // --- Disclaimer box (page 1) ---
+  if (y > pageH - margin - 90) { doc.addPage(); y = margin; }
+  y += 18;
+  const discLines = [
+    "Disclaimer: This is a screening measurement obtained with a consumer smartphone sensor, following the",
+    "ISO 18738 measurement methodology. It is intended for comparative and trend assessment (e.g. before/after",
+    "maintenance) and for indicative checks against EN 81-20 / EN 81-50. It is NOT a substitute for calibrated,",
+    "traceable ride-quality certification equipment. Absolute values carry the inherent tolerance of the device's",
+    "MEMS accelerometer; the responsible engineer must confirm any pass/fail decision with certified instruments.",
+  ];
+  const boxH = 14 + discLines.length * 12;
+  doc.setFillColor(255, 248, 225);
+  doc.setDrawColor(255, 183, 3);
+  doc.setLineWidth(1);
+  doc.rect(margin, y, pageW - 2 * margin, boxH, "FD");
+  doc.setTextColor(96, 76, 0);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.text("Measurement basis", margin + 8, y + 14);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  discLines.forEach((ln, i) => doc.text(ln, margin + 8, y + 28 + i * 12));
+  doc.setTextColor(0, 0, 0);
+
   // --- Graphs page(s) ---
   doc.addPage();
   y = margin;
@@ -258,11 +282,16 @@ function generatePdfReport(meta, result, charts) {
   const pages = doc.getNumberOfPages();
   for (let p = 1; p <= pages; p++) {
     doc.setPage(p);
-    doc.setFontSize(8);
+    doc.setFontSize(7);
     doc.setTextColor(120);
     doc.text(
-      `Portal Lift Tester Software  •  Confirmed per EN 81-20 / EN 81-50  •  Page ${p} of ${pages}`,
-      pageW / 2, pageH - 16, { align: "center" }
+      "Screening measurement per ISO 18738 methodology — not a substitute for calibrated certification equipment.",
+      pageW / 2, pageH - 24, { align: "center" }
+    );
+    doc.setFontSize(8);
+    doc.text(
+      `Portal Lift Tester Software  •  EN 81-20 / EN 81-50  •  Page ${p} of ${pages}`,
+      pageW / 2, pageH - 14, { align: "center" }
     );
   }
 
