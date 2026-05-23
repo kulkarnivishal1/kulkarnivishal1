@@ -592,14 +592,14 @@
 
   function renderCharts(result) {
     destroyCharts();
-    const { t, aVert, velocity, displacement, jerk, aHoriz, spectrum } = result;
+    const { t, aVert, velocity, displacement, jerk, aHorizVib, spectrum } = result;
     makeRideProfileChart(result);
     renderPhaseTable(result);
     makeChart("chartAccel", "a_vertical (m/s²)", t, aVert,        "#0b3d91", "Acceleration (m/s²)");
     makeChart("chartVel",   "Velocity (m/s)",    t, velocity,     "#2e7d32", "Velocity (m/s)");
     makeChart("chartDisp",  "Displacement (m)",  t, displacement, "#ed6c02", "Displacement (m)");
     makeChart("chartJerk",  "Jerk (m/s³)",       t, jerk,         "#c1121f", "Jerk (m/s³)");
-    makeChart("chartHoriz", "|a_horizontal| (m/s²)", t, aHoriz,   "#5b21b6", "Horizontal accel (m/s²)");
+    makeChart("chartHoriz", "Horizontal vibration (m/s²)", t, aHorizVib, "#5b21b6", "Horizontal vibration (m/s²)");
     makeSpectrumChart(spectrum);
   }
 

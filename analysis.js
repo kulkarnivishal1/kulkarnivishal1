@@ -57,7 +57,6 @@ function differentiate(t, y) {
 function movingAverage(arr, w) {
   if (w <= 1) return arr.slice();
   const out = new Float64Array(arr.length);
-  let sum = 0;
   const half = Math.floor(w / 2);
   for (let i = 0; i < arr.length; i++) {
     const lo = Math.max(0, i - half);
@@ -65,6 +64,41 @@ function movingAverage(arr, w) {
     let s = 0;
     for (let k = lo; k <= hi; k++) s += arr[k];
     out[i] = s / (hi - lo + 1);
+  }
+  return out;
+}
+
+/**
+ * Zero-phase Gaussian low-pass filter. `fc` is the -3 dB cutoff in Hz.
+ * Symmetric kernel => no phase lag (important: a lagging filter would shift
+ * acceleration peaks in time and corrupt the integrated velocity). Edges are
+ * handled by clamping to the boundary sample.
+ */
+function gaussianLowpass(t, y, fc) {
+  const N = y.length;
+  if (N < 3 || !(fc > 0)) return Float64Array.from(y);
+  const dt = (t[N - 1] - t[0]) / (N - 1);
+  if (!(dt > 0)) return Float64Array.from(y);
+  // Gaussian sigma (in samples) that yields the requested -3 dB cutoff.
+  const sigma = 1 / (2 * Math.PI * fc * dt);
+  if (sigma < 0.5) return Float64Array.from(y); // cutoff above Nyquist -> passthrough
+  const half = Math.max(1, Math.ceil(3 * sigma));
+  const kernel = new Float64Array(2 * half + 1);
+  let ksum = 0;
+  for (let k = -half; k <= half; k++) {
+    const w = Math.exp(-0.5 * (k / sigma) * (k / sigma));
+    kernel[k + half] = w; ksum += w;
+  }
+  for (let i = 0; i < kernel.length; i++) kernel[i] /= ksum;
+  const out = new Float64Array(N);
+  for (let i = 0; i < N; i++) {
+    let acc = 0;
+    for (let k = -half; k <= half; k++) {
+      let idx = i + k;
+      if (idx < 0) idx = 0; else if (idx >= N) idx = N - 1;
+      acc += y[idx] * kernel[k + half];
+    }
+    out[i] = acc;
   }
   return out;
 }
@@ -368,23 +402,54 @@ function analyseRide(samples) {
     aHoriz[i] = Math.hypot(hx, hy, hz);
   }
 
-  // Light smoothing of vertical acceleration (sample-rate aware ~80 ms).
-  const dtMean = t[t.length - 1] / (t.length - 1);
-  const smoothW = Math.max(3, Math.round(0.08 / Math.max(dtMean, 1e-3)));
-  const aVert = movingAverage(aVertRaw, smoothW);
+  const N = t.length;
+  const dtMean = t[N - 1] / (N - 1);
 
-  // Velocity (integrate vertical accel). Apply linear drift removal so
-  // both endpoints are at rest.
+  // ---- Filtering ----------------------------------------------------------
+  // The raw phone accelerometer is broadband-noisy. Differentiating it (jerk)
+  // or double-integrating it (distance) without filtering amplifies that noise
+  // massively. Apply zero-phase Gaussian low-passes matched to lift dynamics:
+  //   - 4 Hz for the "ride signal" used for velocity, distance and peaks
+  //     (bulk car motion is < 1 Hz; 4 Hz keeps the accel/decel ramps intact).
+  //   - 2 Hz before differentiating for jerk (real jerk transitions span
+  //     ~0.5 s, i.e. ~1-2 Hz; anything faster is sensor noise).
+  const aVert = gaussianLowpass(t, aVertRaw, 4.0);
+  const aVertForJerk = gaussianLowpass(t, aVertRaw, 2.0);
+
+  // ---- Bias removal via zero-velocity update (ZUPT) -----------------------
+  // The car is at rest at both ends of the recording. Use those rest zones to
+  // estimate and remove any residual DC bias left by an imperfect gravity
+  // estimate (the dominant source of double-integration drift).
+  const restThresh = 0.05; // m/s^2
+  let mStart = 0;        while (mStart < N - 1 && Math.abs(aVert[mStart]) < restThresh) mStart++;
+  let mEnd = N - 1;      while (mEnd > 0       && Math.abs(aVert[mEnd])   < restThresh) mEnd--;
+  if (mEnd <= mStart) { mStart = 0; mEnd = N - 1; }
+  let biasSum = 0, biasN = 0;
+  for (let i = 0; i < mStart; i++)      { biasSum += aVert[i]; biasN++; }
+  for (let i = mEnd + 1; i < N; i++)    { biasSum += aVert[i]; biasN++; }
+  const bias = biasN > 3 ? biasSum / biasN : 0;
+  for (let i = 0; i < N; i++) { aVert[i] -= bias; aVertForJerk[i] -= bias; }
+
+  // ---- Velocity (integrate, then ZUPT-anchored drift removal) -------------
   let velocity = integrate(t, aVert);
-  const vEnd = velocity[velocity.length - 1];
-  const tEnd = t[t.length - 1] || 1;
-  for (let i = 0; i < velocity.length; i++) velocity[i] -= (vEnd * t[i]) / tEnd;
+  const vAtStart = velocity[mStart];
+  const vAtEnd   = velocity[mEnd];
+  const span = (t[mEnd] - t[mStart]) || 1;
+  for (let i = 0; i < N; i++) {
+    const frac = (t[i] - t[mStart]) / span;
+    velocity[i] -= vAtStart + frac * (vAtEnd - vAtStart);
+  }
+  // The car is provably stationary before motion starts and after it stops;
+  // clamp those regions to exactly zero so integration noise there can't leak
+  // into the distance.
+  for (let i = 0; i < mStart; i++)   velocity[i] = 0;
+  for (let i = mEnd + 1; i < N; i++) velocity[i] = 0;
 
   // Displacement.
   const displacement = integrate(t, velocity);
 
-  // Jerk.
-  const jerk = differentiate(t, aVert);
+  // Jerk (from the 2 Hz signal).
+  const jerk = differentiate(t, aVertForJerk);
 
   // Phase detection.
   const phases = detectPhases(t, aVert, velocity, 0.15);
@@ -411,6 +476,20 @@ function analyseRide(samples) {
   const maxVel = Math.max(...velocity.map(Math.abs));
   const maxJerk = Math.max(...jerk.map(Math.abs));
 
+  // ---- Vibration signals (band-pass 0.7 .. 20 Hz) ------------------------
+  // Ride-quality vibration is the AC content during constant velocity. Remove
+  // the bulk car motion (< 0.7 Hz) and the highest-frequency sensor noise
+  // (> 20 Hz) so the peak-to-peak and A95 figures reflect real ride roughness
+  // rather than DC offset or hash, consistent with ISO 18738 practice.
+  const vibBand = (raw) => {
+    const low = gaussianLowpass(t, raw, 0.7);
+    const hp = new Float64Array(N);
+    for (let i = 0; i < N; i++) hp[i] = raw[i] - low[i];
+    return gaussianLowpass(t, hp, 20.0);
+  };
+  const aVertVib  = vibBand(aVertRaw);
+  const aHorizVib = vibBand(aHoriz);
+
   // Constant velocity window for vibration analysis.
   const cv = findConstantVelocityWindow(t, aVert, 0.15);
   let vertVibPP = 0, vertVibA95 = 0, horizVibPP = 0, horizVibA95 = 0;
@@ -420,15 +499,15 @@ function analyseRide(samples) {
   if (cv) {
     cvStartT = t[cv.startIdx];
     cvEndT = t[cv.endIdx];
-    const vert = slidingPeakToPeak(t, aVert,  cv.startIdx, cv.endIdx, 1.0);
-    const hor  = slidingPeakToPeak(t, aHoriz, cv.startIdx, cv.endIdx, 1.0);
+    const vert = slidingPeakToPeak(t, aVertVib,  cv.startIdx, cv.endIdx, 1.0);
+    const hor  = slidingPeakToPeak(t, aHorizVib, cv.startIdx, cv.endIdx, 1.0);
     vertVibPP = vert.max; vertVibA95 = vert.a95;
     horizVibPP = hor.max; horizVibA95 = hor.a95;
 
     // FFT spectrum over the constant-velocity plateau.
     const targetFs = Math.max(50, Math.min(200, Math.round(1 / Math.max(dtMean, 1e-3))));
-    const rsV = resampleUniform(t, aVert,  cv.startIdx, cv.endIdx, targetFs);
-    const rsH = resampleUniform(t, aHoriz, cv.startIdx, cv.endIdx, targetFs);
+    const rsV = resampleUniform(t, aVertVib,  cv.startIdx, cv.endIdx, targetFs);
+    const rsH = resampleUniform(t, aHorizVib, cv.startIdx, cv.endIdx, targetFs);
     if (rsV.y.length >= 32) {
       const specV = magnitudeSpectrum(rsV.y, rsV.fs);
       const specH = magnitudeSpectrum(rsH.y, rsH.fs);
@@ -449,17 +528,15 @@ function analyseRide(samples) {
     }
   }
 
-  // Acceleration / deceleration magnitudes.
+  // Acceleration / deceleration peaks from the sign-normalised signal:
+  // aSigned > 0 while the car speeds up (in the travel direction) and < 0
+  // while it slows down. This works for both UP and DOWN rides and does not
+  // depend on a fixed phase-detection threshold (gentle hydraulic
+  // decelerations of ~0.1 m/s² would otherwise be missed).
   let accelMag = 0, decelMag = 0;
-  if (phases.accelStart >= 0 && phases.accelEnd > phases.accelStart) {
-    for (let i = phases.accelStart; i <= phases.accelEnd; i++) {
-      accelMag = Math.max(accelMag, Math.abs(aVert[i]));
-    }
-  }
-  if (phases.decelStart >= 0 && phases.decelEnd > phases.decelStart) {
-    for (let i = phases.decelStart; i <= phases.decelEnd; i++) {
-      decelMag = Math.max(decelMag, Math.abs(aVert[i]));
-    }
+  for (let i = 0; i < N; i++) {
+    if (aSigned[i] > accelMag) accelMag = aSigned[i];
+    if (-aSigned[i] > decelMag) decelMag = -aSigned[i];
   }
 
   const durationS = t[t.length - 1];
@@ -467,6 +544,7 @@ function analyseRide(samples) {
 
   return {
     t, aVert, velocity, displacement, jerk, aHoriz,
+    aVertVib, aHorizVib,
     aSigned, vSigned,
     samples,
     gravity,
@@ -481,7 +559,7 @@ function analyseRide(samples) {
       net_displacement_m: Math.abs(netDisp),
       max_velocity_mps: maxVel,
       max_acceleration_mps2: accelMag || maxAbsAcc,
-      max_deceleration_mps2: decelMag || maxAbsAcc,
+      max_deceleration_mps2: decelMag || accelMag || maxAbsAcc,
       max_jerk_mps3: maxJerk,
       vert_vibration_pp_mps2: vertVibPP,
       vert_vibration_a95_mps2: vertVibA95,
