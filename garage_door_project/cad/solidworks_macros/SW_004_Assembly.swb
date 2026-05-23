@@ -1,0 +1,132 @@
+' ============================================================================
+' SmartLift Pro — SolidWorks VBA Macro
+' FILE: SW_004_Assembly.swb
+' ASSEMBLY: Full Door Assembly — mates panels, tracks, spring tube, brackets
+'
+' PREREQUISITES: Run SW_001, SW_002, SW_003 first (creates SLDPRT files in .\parts\)
+' USAGE: Tools → Macros → Run → Select this file
+' ============================================================================
+
+Option Explicit
+
+Const MM As Double = 0.001
+
+' Panel parameters
+Const PANEL_W  As Double = 2540
+Const PANEL_H  As Double = 533
+Const PANEL_T  As Double = 40
+Const N_PANELS As Integer = 4
+
+' Track parameters
+Const TRACK_L  As Double = 2285
+Const TRACK_W  As Double = 76
+Const TRACK_FL As Double = 32     ' flange depth
+
+Sub main()
+    Dim swApp       As SldWorks.SldWorks
+    Dim swAssy      As SldWorks.AssemblyDoc
+    Dim swModel     As SldWorks.ModelDoc2
+    Dim swComp      As SldWorks.Component2
+    Dim swMate      As SldWorks.Mate2
+    Dim swMateFeat  As SldWorks.Feature
+    Dim swSelMgr    As SldWorks.SelectionMgr
+    Dim bRet        As Boolean
+    Dim i           As Integer
+
+    Set swApp = Application.SldWorks
+
+    ' Create new assembly document
+    Dim assyTemplate As String
+    assyTemplate = swApp.GetUserPreferenceStringValue( _
+        swUserPreferenceStringValue_e.swDefaultTemplateAssembly)
+    Set swModel = swApp.NewDocument(assyTemplate, 0, 0, 0)
+    Set swAssy  = swModel
+
+    ' ── INSERT PANELS (4 sections stacked vertically) ─────────────────────
+    Dim panelPath As String
+    panelPath = Left(ThisDocument.Path, InStrRev(ThisDocument.Path, "\")) & _
+                "parts\GD-DP-001_Panel.SLDPRT"
+
+    Dim panelComp(3) As SldWorks.Component2
+    For i = 0 To N_PANELS - 1
+        ' Insert panel at origin, then move
+        Set swComp = swAssy.AddComponent(panelPath, _
+            0, (i * PANEL_H + PANEL_H / 2) * MM, 0)
+        If Not swComp Is Nothing Then
+            swComp.Name2 = "Panel_Section_" & (i + 1)
+            Set panelComp(i) = swComp
+        Else
+            MsgBox "Could not insert panel part. Check path: " & panelPath, _
+                   vbExclamation, "SmartLift Pro"
+            Exit Sub
+        End If
+    Next i
+
+    ' ── INSERT VERTICAL TRACKS (LH and RH) ───────────────────────────────
+    Dim trackPath As String
+    trackPath = Left(ThisDocument.Path, InStrRev(ThisDocument.Path, "\")) & _
+                "parts\GD-TR-001_Vertical_Track.SLDPRT"
+
+    ' Left track: at x = -(PANEL_W/2 + TRACK_W/2 + 5)
+    Dim leftTrack As SldWorks.Component2
+    Set leftTrack = swAssy.AddComponent(trackPath, _
+        -(PANEL_W / 2 + TRACK_W / 2 + 5) * MM, _
+        (TRACK_L / 2) * MM, _
+        (PANEL_T / 2) * MM)
+    If Not leftTrack Is Nothing Then leftTrack.Name2 = "Vertical_Track_LH"
+
+    ' Right track: mirror of left
+    Dim rightTrack As SldWorks.Component2
+    Set rightTrack = swAssy.AddComponent(trackPath, _
+        (PANEL_W / 2 + TRACK_W / 2 + 5) * MM, _
+        (TRACK_L / 2) * MM, _
+        (PANEL_T / 2) * MM)
+    If Not rightTrack Is Nothing Then rightTrack.Name2 = "Vertical_Track_RH"
+
+    ' ── INSERT CENTER BRACKET ─────────────────────────────────────────────
+    Dim bktPath As String
+    bktPath = Left(ThisDocument.Path, InStrRev(ThisDocument.Path, "\")) & _
+              "parts\GD-SP-006_Center_Bracket.SLDPRT"
+
+    Dim centerBkt As SldWorks.Component2
+    Set centerBkt = swAssy.AddComponent(bktPath, _
+        0, _
+        (N_PANELS * PANEL_H + 75) * MM, _
+        0)
+    If Not centerBkt Is Nothing Then centerBkt.Name2 = "Center_Header_Bracket"
+
+    ' ── MATES: PANEL STACKING ─────────────────────────────────────────────
+    ' Coincident mate: top face of panel N = bottom face of panel N+1
+    ' (Full mate selection requires face entity references — shown as placeholder)
+    ' In SolidWorks, run macro then apply mates manually in assembly tree:
+    '   1. Select top face of Section 1 + bottom face of Section 2 → Coincident
+    '   2. Repeat for 2→3, 3→4
+    '   3. Fix Section 1 at Y=0 (ground reference)
+
+    MsgBox "Assembly created with:" & vbCrLf & _
+           "  - 4 × Panel sections (stacked)" & vbCrLf & _
+           "  - 2 × Vertical tracks (LH + RH)" & vbCrLf & _
+           "  - 1 × Center bracket" & vbCrLf & vbCrLf & _
+           "NEXT STEPS — Apply mates manually:" & vbCrLf & _
+           "  1. Fix Section 1 bottom at Y=0 (ground)" & vbCrLf & _
+           "  2. Coincident: top face S1 ↔ bottom face S2" & vbCrLf & _
+           "  3. Coincident: top face S2 ↔ bottom face S3" & vbCrLf & _
+           "  4. Coincident: top face S3 ↔ bottom face S4" & vbCrLf & _
+           "  5. Symmetric: tracks about door CL (YZ plane)" & vbCrLf & _
+           "  6. Coincident: panel end face ↔ track guide face" & vbCrLf & _
+           "  7. Insert spring tube, drums, operator from library" & vbCrLf & _
+           "  See GD-DWG-001 for reference.", _
+           vbInformation, "SmartLift Pro — Assembly"
+
+    ' Rebuild and prompt save
+    swModel.ForceRebuild3 False
+
+    Dim savePath As String
+    savePath = Left(ThisDocument.Path, InStrRev(ThisDocument.Path, "\")) & _
+               "GD-ASSY-001_SmartLift_Door.SLDASM"
+    bRet = swModel.SaveAs3(savePath, 0, 0)
+    If Not bRet Then
+        MsgBox "Assembly created. Save as GD-ASSY-001_SmartLift_Door.SLDASM", _
+               vbExclamation, "SmartLift Pro"
+    End If
+End Sub

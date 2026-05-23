@@ -1,0 +1,152 @@
+' ============================================================================
+' SmartLift Pro — SolidWorks VBA Macro
+' FILE: SW_006_Wall_Bracket.swb
+' PART: Wall Angle Bracket — 150×100×3mm, 90° L-shape, HDG steel
+'       Matches laser-cut flat blank DXF: GD-DXF-003
+' ============================================================================
+
+Option Explicit
+
+Const LEG_A_W   As Double = 50     ' mm  leg A width (wall-mount leg)
+Const LEG_B_W   As Double = 100    ' mm  leg B width (track-mount leg)
+Const BKT_H     As Double = 100    ' mm  height
+Const BKT_T     As Double = 3      ' mm  thickness
+Const BOLT_D    As Double = 9      ' mm  Ø9 for M8 bolt
+Const SLOT_W    As Double = 9      ' mm  adjustment slot width
+Const SLOT_L    As Double = 20     ' mm  adjustment slot length
+Const MM        As Double = 0.001
+
+Sub main()
+    Dim swApp       As SldWorks.SldWorks
+    Dim swModel     As SldWorks.ModelDoc2
+    Dim swPart      As SldWorks.PartDoc
+    Dim swFeature   As SldWorks.Feature
+    Dim skMgr       As SldWorks.SketchManager
+    Dim featMgr     As SldWorks.FeatureManager
+    Dim bRet        As Boolean
+
+    Set swApp   = Application.SldWorks
+    Set swModel = swApp.NewDocument( _
+        swApp.GetUserPreferenceStringValue(swUserPreferenceStringValue_e.swDefaultTemplatePart), _
+        0, 0, 0)
+    Set swPart  = swModel
+    Set skMgr   = swModel.SketchManager
+    Set featMgr = swModel.FeatureManager
+
+    ' ── FEATURE 1: L-BRACKET PROFILE (extruded from front plane) ─────────
+    ' Sketch on Front Plane: L cross-section
+    swModel.Extension.SelectByID2 "Front Plane", "PLANE", 0, 0, 0, False, 0, Nothing, 0
+    swModel.InsertSketch2 True
+
+    ' L-profile CCW:
+    ' Vertical leg (LEG_A_W wide, full BKT_H tall)
+    ' Horizontal leg (LEG_B_W wide, BKT_T thick) at bottom
+    skMgr.CreateLine 0, 0, 0,                     LEG_A_W * MM, 0, 0
+    skMgr.CreateLine LEG_A_W * MM, 0, 0,          LEG_A_W * MM, BKT_T * MM, 0
+    skMgr.CreateLine LEG_A_W * MM, BKT_T * MM, 0, (LEG_A_W + LEG_B_W) * MM, BKT_T * MM, 0
+    skMgr.CreateLine (LEG_A_W + LEG_B_W) * MM, BKT_T * MM, 0, (LEG_A_W + LEG_B_W) * MM, 0, 0
+    skMgr.CreateLine (LEG_A_W + LEG_B_W) * MM, 0, 0, (LEG_A_W + LEG_B_W + BKT_T) * MM, 0, 0
+    skMgr.CreateLine (LEG_A_W + LEG_B_W + BKT_T) * MM, 0, 0, (LEG_A_W + LEG_B_W + BKT_T) * MM, BKT_H * MM, 0
+    skMgr.CreateLine (LEG_A_W + LEG_B_W + BKT_T) * MM, BKT_H * MM, 0, 0, BKT_H * MM, 0
+    skMgr.CreateLine 0, BKT_H * MM, 0,            0, 0, 0
+
+    swModel.InsertSketch2 True
+
+    swModel.Extension.SelectByID2 "Sketch1", "SKETCH", 0, 0, 0, False, 0, Nothing, 0
+    Set swFeature = featMgr.FeatureBoss2( _
+        False, False, False, swEndCondBlind, 0, _
+        BKT_T * MM, 0, _
+        False, False, False, False, 0, 0, False, False, False, False, True, True, True, 0, 0, False)
+    swFeature.Name = "LBracket_3mm_HDG"
+
+    ' ── FEATURE 2: WALL BOLT HOLES (3× Ø9 on vertical leg, M8) ──────────
+    Dim wallHoleY(2) As Double
+    wallHoleY(0) = 20 * MM
+    wallHoleY(1) = 50 * MM
+    wallHoleY(2) = 80 * MM
+
+    Dim i As Integer
+    For i = 0 To 2
+        swModel.ClearSelection2 True
+        swModel.Extension.SelectByID2 "Top@LBracket_3mm_HDG", "FACE", _
+            LEG_A_W / 2 * MM, wallHoleY(i), BKT_T * MM, False, 0, Nothing, 0
+        swModel.InsertSketch2 True
+
+        skMgr.CreateCircle (LEG_A_W + LEG_B_W + BKT_T / 2) * MM, wallHoleY(i), 0, _
+                           (LEG_A_W + LEG_B_W + BKT_T / 2 + BOLT_D / 2) * MM, wallHoleY(i), 0
+
+        swModel.InsertSketch2 True
+        swModel.Extension.SelectByID2 "Sketch" & (i + 2), "SKETCH", 0, 0, 0, False, 0, Nothing, 0
+        Set swFeature = featMgr.FeatureCut2( _
+            False, False, False, swEndCondThroughAll, 0, _
+            0, 0, False, False, False, False, 0, 0, False, False, False, False, True, True, True, 0, 0, False, 0, 0, False, False)
+        swFeature.Name = "WallBolt_Hole_" & (i + 1)
+    Next i
+
+    ' ── FEATURE 3: TRACK BOLT HOLES (2× Ø9 on horizontal leg) ───────────
+    Dim trackHoleY(1) As Double
+    trackHoleY(0) = 25 * MM
+    trackHoleY(1) = 75 * MM
+
+    For i = 0 To 1
+        swModel.ClearSelection2 True
+        swModel.Extension.SelectByID2 "Top@LBracket_3mm_HDG", "FACE", _
+            (LEG_A_W + LEG_B_W / 2) * MM, trackHoleY(i), BKT_T * MM, False, 0, Nothing, 0
+        swModel.InsertSketch2 True
+
+        skMgr.CreateCircle (LEG_A_W + 30) * MM, trackHoleY(i), 0, _
+                           (LEG_A_W + 30 + BOLT_D / 2) * MM, trackHoleY(i), 0
+
+        swModel.InsertSketch2 True
+        swModel.Extension.SelectByID2 "Sketch" & (i + 5), "SKETCH", 0, 0, 0, False, 0, Nothing, 0
+        Set swFeature = featMgr.FeatureCut2( _
+            False, False, False, swEndCondThroughAll, 0, _
+            0, 0, False, False, False, False, 0, 0, False, False, False, False, True, True, True, 0, 0, False, 0, 0, False, False)
+        swFeature.Name = "TrackBolt_Hole_" & (i + 1)
+    Next i
+
+    ' ── FEATURE 4: ADJUSTMENT SLOT (9×20mm on horizontal leg) ────────────
+    swModel.ClearSelection2 True
+    swModel.Extension.SelectByID2 "Top@LBracket_3mm_HDG", "FACE", _
+        (LEG_A_W + LEG_B_W / 2) * MM, (BKT_H / 2) * MM, BKT_T * MM, False, 0, Nothing, 0
+    swModel.InsertSketch2 True
+
+    Dim slotX As Double
+    slotX = (LEG_A_W + 75) * MM
+    skMgr.CreateSlotOverallCenterPoint _
+        slotX, (BKT_H / 2) * MM, 0, _
+        slotX + SLOT_L * MM, (BKT_H / 2) * MM, 0, _
+        SLOT_W / 2 * MM
+
+    swModel.InsertSketch2 True
+    swModel.Extension.SelectByID2 "Sketch7", "SKETCH", 0, 0, 0, False, 0, Nothing, 0
+    Set swFeature = featMgr.FeatureCut2( _
+        False, False, False, swEndCondThroughAll, 0, _
+        0, 0, False, False, False, False, 0, 0, False, False, False, False, True, True, True, 0, 0, False, 0, 0, False, False)
+    swFeature.Name = "AdjustmentSlot_9x20mm"
+
+    ' ── MATERIAL ─────────────────────────────────────────────────────────
+    swPart.SetMaterialPropertyName2 "", "SolidWorks Materials", "Galvanized Steel"
+
+    ' ── CUSTOM PROPERTIES ─────────────────────────────────────────────────
+    Dim swCustProp As SldWorks.CustomPropertyManager
+    Set swCustProp = swModel.Extension.CustomPropertyManager("")
+    swCustProp.Add3 "Part_Number",  swCustomInfoText, "TR-004", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Description",  swCustomInfoText, "WALL ANGLE BRACKET 150x100x3mm HDG", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Material",     swCustomInfoText, "3mm HDG MILD STEEL Z450", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Finish",       swCustomInfoText, "HOT-DIP GALVANIZED Z450", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Qty_Per_Door", swCustomInfoText, "8 (4 PER SIDE)", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Make_Buy",     swCustomInfoText, "MAKE — LASER CUT FLAT BLANK + PRESS BRAKE", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Bend_Radius",  swCustomInfoText, "3mm INSIDE RADIUS AT 90° BEND", swCustomPropertyReplaceValue
+    swCustProp.Add3 "Drawing_Ref",  swCustomInfoText, "GD-DXF-003", swCustomPropertyReplaceValue
+
+    swModel.ForceRebuild3 False
+
+    Dim savePath As String
+    savePath = Left(ThisDocument.Path, InStrRev(ThisDocument.Path, "\")) & _
+               "parts\GD-TR-004_Wall_Bracket.SLDPRT"
+    bRet = swModel.SaveAs3(savePath, 0, 0)
+    If Not bRet Then
+        MsgBox "Part created. Save as GD-TR-004_Wall_Bracket.SLDPRT", vbExclamation, "SmartLift Pro"
+    End If
+End Sub
