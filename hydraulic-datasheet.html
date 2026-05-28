@@ -513,9 +513,10 @@ function makePDF(meta, inp, R) {
   row('Slenderness ratio lambda = l / i_n', fv(R.lam,1));
   row('Formula', R.lam>=100?'Formula 51 (Euler, lambda >= 100)':'Formula 52 (Johnson parabolic, lambda < 100)');
   row('Ram mass estimate P_t', fv(R.mRam,1)+' kg');
-  row('Allowable buckling force F_s_allow', fv(R.Fsallow/1000,2)+' kN');
-  rowck('Actual buckling force F_s  [Formula 53]', fv(R.Fsact/1000,2)+' kN', R.buckOk);
-  row('Safety factor (allow / actual)', fv(R.SFb,2)+'  (required >= 2.0)');
+  row('Critical buckling load F_crit  (no safety factor)', fv(R.Fsallow*2/1000,2)+' kN');
+  row('Allowable F_s_allow = F_crit / 2  [SF=2 per IS 17900 Formula 51/52]', fv(R.Fsallow/1000,2)+' kN');
+  rowck('Actual buckling force F_s  [Formula 53, c_m='+fv(1/R.tR,1)+']', fv(R.Fsact/1000,2)+' kN', R.buckOk);
+  row('Safety factor (F_s_allow / F_s)', fv(R.SFb,2)+'  (required >= 2.0)');
 
   // Summary box
   y+=18; var BH=70;
@@ -538,11 +539,16 @@ function makePDF(meta, inp, R) {
   y+=BH+14;
 
   sec('Notes');
-  ['1. All calculations are per-cylinder and per-ram (load divided by n_cyl and trans ratio).',
-   '2. Buckling length l = cabin travel / transmission ratio (= ram stroke).',
-   '3. Fig. 10 graphical safety factor (S1 vs Dt/dr) should be verified separately.',
-   '4. Welding seam stress-relief checks (Formulae 38-43) apply where seams are present.',
-   '5. This datasheet must be reviewed by a qualified engineer before use in construction.'
+  ['1. Load per ram = (P+Q) / (n_cyl x tR).  Per IS 17900 Formula 53: c_m = 1/tR (0.5 for 2:1 indirect).',
+   '   In 2:1 roped indirect reeving, the car is the moveable pulley (2 rope strands) => ram carries P+Q/2.',
+   '2. F_s_allow already includes SF=2 per IS 17900 Formulae 51/52.  F_crit (no SF) = 2 x F_s_allow.',
+   '3. Buckling length l = ram stroke = cabin travel / tR, assuming pin-pin end conditions.',
+   '   For fixed-free end conditions (cantilever), use l_eff = 2 x l; verify per actual installation.',
+   '4. Fig. 10 graphical safety factor (S1 vs Dt/dr) should be verified separately by the engineer.',
+   '5. Welding seam stress-relief checks (Formulae 38-43) apply where seams are present.',
+   '6. This datasheet covers IS 17900 Formulae 37, 51-53 only.  Additional checks required for',
+   '   certification: fatigue, end caps, seal grooves, weld NDT, pipe burst, safety valve setting.',
+   '7. This datasheet must be reviewed by a qualified engineer before use in construction.'
   ].forEach(function(n){ y+=12; doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(80,80,80); doc.text(n,ML+4,y); });
 
   y+=26; hln(y,[180,180,180]); y+=14;
@@ -694,9 +700,10 @@ function runCalc() {
       ['Ram mass estimate P<sub>t</sub>', fv(res.mRam,1)+' kg'],
       ['Slenderness ratio &lambda;', fv(res.lam,1)],
       ['Formula applied', res.lam>=100?'Formula 51 (Euler, &lambda;&ge;100)':'Formula 52 (Johnson, &lambda;&lt;100)'],
-      ['Allowable F<sub>s,allow</sub>', fv(res.Fsallow/1000,2)+' kN'],
-      ['Actual F<sub>s</sub> (Formula 53)', fv(res.Fsact/1000,2)+' kN', res.buckOk],
-      ['Safety factor', fv(res.SFb,2)+'  (req &ge; 2.0)'],
+      ['Critical load F<sub>crit</sub> (before SF)', fv(res.Fsallow*2/1000,2)+' kN'],
+      ['Allowable F<sub>s,allow</sub> = F<sub>crit</sub> / 2  <small>(SF=2 per IS 17900)</small>', fv(res.Fsallow/1000,2)+' kN'],
+      ['Actual F<sub>s</sub> (Formula 53, c<sub>m</sub>='+fv(1/res.tR,1)+')', fv(res.Fsact/1000,2)+' kN', res.buckOk],
+      ['Safety factor (F<sub>s,allow</sub> / F<sub>s</sub>)', fv(res.SFb,2)+'  (req &ge; 2.0)'],
     ]);
 
     document.getElementById('pdfBtn').disabled=false;
