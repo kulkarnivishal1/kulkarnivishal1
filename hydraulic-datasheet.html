@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hydraulic Cylinder Datasheet — Portal Engineering</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%230b3d91'/><text x='32' y='44' font-size='40' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>P</text></svg>" />
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --blue:    #0b3d91; --blue-lt: #e8f0fe; --blue-mid: #1a56c9;
+  --green:   #16a34a; --red: #dc2626;
+  --gray1:   #f8f9fa; --gray2: #e9ecef; --gray3: #ced4da;
+  --text:    #212529; --muted: #6c757d; --radius: 8px;
+}
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f4f8; color: var(--text); min-height: 100vh; }
+
+.app-header {
+  background: var(--blue); color: #fff; padding: 0 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 64px; box-shadow: 0 2px 8px rgba(0,0,0,.25);
+  position: sticky; top: 0; z-index: 100;
+}
+.brand { display: flex; align-items: center; gap: 14px; }
+.logo { width: 40px; height: 40px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; color: var(--blue); flex-shrink: 0; }
+.brand h1 { font-size: 1.05rem; font-weight: 700; line-height: 1.2; }
+.brand p  { font-size: 0.72rem; opacity: .75; }
+.header-std { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25); border-radius: 6px; padding: 4px 12px; font-size: 0.75rem; font-weight: 700; }
+
+.container { max-width: 1300px; margin: 0 auto; padding: 24px 20px; display: grid; grid-template-columns: 430px 1fr; gap: 20px; align-items: start; }
+@media (max-width: 920px) { .container { grid-template-columns: 1fr; } }
+
+.card { background: #fff; border-radius: var(--radius); box-shadow: 0 1px 4px rgba(0,0,0,.08), 0 2px 12px rgba(0,0,0,.05); overflow: hidden; }
+.card-header { background: var(--blue); color: #fff; padding: 12px 18px; font-weight: 700; font-size: .9rem; display: flex; align-items: center; gap: 8px; }
+.card-body { padding: 16px 18px; }
+
+.sec { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--blue); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 2px solid var(--blue-lt); }
+.sec:first-child { margin-top: 0; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.span2 { grid-column: span 2; }
+
+label { display: flex; flex-direction: column; gap: 4px; font-size: .8rem; font-weight: 600; color: #495057; }
+label .unit { font-size: .7rem; font-weight: 400; color: var(--muted); margin-left: 4px; }
+input[type=text], input[type=number], select {
+  border: 1.5px solid var(--gray3); border-radius: 6px; padding: 7px 10px;
+  font-size: .85rem; font-family: inherit; width: 100%;
+  transition: border-color .15s; background: var(--gray1); color: var(--text);
+}
+input:focus, select:focus { outline: none; border-color: var(--blue-mid); box-shadow: 0 0 0 3px rgba(26,86,201,.15); background: #fff; }
+input[type=number] { font-family: 'Courier New', monospace; }
+
+/* ── Toggle buttons — use <button> for reliable mobile touch ── */
+.toggle-row { display: flex; gap: 8px; }
+.tog {
+  flex: 1; cursor: pointer; padding: 8px 10px; border: 2px solid var(--gray3);
+  border-radius: 6px; text-align: center; font-size: .82rem; font-weight: 600;
+  color: #6c757d; background: var(--gray1); transition: all .15s; user-select: none;
+  /* button element resets */
+  appearance: none; -webkit-appearance: none;
+  font-family: inherit; line-height: normal;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.tog:hover { border-color: var(--blue-mid); color: var(--blue); background: var(--blue-lt); }
+.tog.on { border-color: var(--blue); background: var(--blue); color: #fff; }
+.tog:focus { outline: none; }
+.tog-grp { display: flex; flex-direction: column; gap: 4px; font-size: .8rem; font-weight: 600; color: #495057; }
+
+.config-band { background: linear-gradient(135deg, #eff6ff, #e0e7ff); border: 1.5px solid #c7d2fe; border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.config-band .sec { color: #3730a3; border-bottom-color: #c7d2fe; }
+
+.btn-calc { width: 100%; margin-top: 14px; padding: 13px; background: var(--blue); color: #fff; border: none; border-radius: 8px; font-size: .95rem; font-weight: 700; cursor: pointer; transition: background .15s; }
+.btn-calc:hover { background: var(--blue-mid); }
+.btn-pdf { width: 100%; margin-top: 10px; padding: 11px; background: #fff; color: var(--blue); border: 2px solid var(--blue); border-radius: 8px; font-size: .88rem; font-weight: 700; cursor: pointer; transition: all .15s; }
+.btn-pdf:hover { background: var(--blue-lt); }
+.btn-pdf:disabled { opacity: .4; cursor: not-allowed; }
+
+.err { background: #fef2f2; border: 1.5px solid #fca5a5; border-radius: 8px; padding: 11px 14px; color: var(--red); font-size: .83rem; margin-top: 10px; display: none; }
+
+/* Results */
+.verdict { border-radius: var(--radius); padding: 14px 18px; margin-bottom: 14px; font-weight: 800; font-size: 1rem; display: flex; align-items: center; gap: 10px; }
+.verdict.safe { background: #f0fdf4; color: var(--green); border: 2px solid var(--green); }
+.verdict.fail { background: #fef2f2; color: var(--red); border: 2px solid var(--red); }
+
+.pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.pill { background: var(--blue-lt); color: var(--blue); border-radius: 20px; padding: 3px 11px; font-weight: 700; font-size: .78rem; }
+
+.chk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.chk { border-radius: 8px; padding: 11px 13px; border: 1.5px solid; }
+.chk.pass { background: #f0fdf4; border-color: #86efac; }
+.chk.fail { background: #fef2f2; border-color: #fca5a5; }
+.chk .ci-icon  { font-size: 1.15rem; }
+.chk .ci-label { font-size: .75rem; font-weight: 700; margin-top: 2px; }
+.chk .ci-val   { font-size: .71rem; color: var(--muted); margin-top: 2px; }
+
+.rsec { margin-bottom: 14px; }
+.rsec-title { font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--blue); padding: 5px 10px; background: var(--blue-lt); border-radius: 5px 5px 0 0; border-left: 3px solid var(--blue); display: flex; align-items: center; gap: 8px; }
+.fref { font-size: .68rem; color: var(--blue); background: rgba(11,61,145,.12); padding: 1px 6px; border-radius: 4px; font-weight: 700; }
+.rtbl { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.rtbl td { padding: 6px 10px; border-bottom: 1px solid var(--gray2); vertical-align: middle; }
+.rtbl td:first-child { color: var(--muted); width: 56%; }
+.rtbl td:nth-child(2) { font-weight: 600; font-family: 'Courier New', monospace; }
+.rtbl tr:last-child td { border-bottom: none; }
+.rtbl tr:nth-child(even) { background: #fafafa; }
+
+.bdg { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 20px; font-size: .73rem; font-weight: 700; }
+.bdg.pass { background: #dcfce7; color: var(--green); }
+.bdg.fail { background: #fee2e2; color: var(--red); }
+
+.ph { text-align: center; padding: 60px 20px; color: var(--muted); }
+.ph-icon { font-size: 3rem; margin-bottom: 12px; }
+
+.page-footer { background: var(--blue); color: rgba(255,255,255,.8); text-align: center; padding: 10px 24px; font-size: .72rem; margin-top: 12px; }
+.page-footer strong { color: #fff; font-style: italic; }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand">
+    <div class="logo">P</div>
+    <div>
+      <h1>Portal Engineering Limited</h1>
+      <p>Your Engineering Excellence Partners</p>
+    </div>
+  </div>
+  <div class="header-std">IS 17900 (Part 2) : 2022</div>
+</header>
+
+<div class="container">
+
+<!-- ═══ LEFT: Inputs ═══ -->
+<div>
+<div class="card">
+  <div class="card-header">&#9881; Design Inputs</div>
+  <div class="card-body">
+
+    <div class="sec">Project Information</div>
+    <div class="grid2">
+      <label class="span2">Project Name
+        <input type="text" id="projName" placeholder="e.g. MG Road Tower — Lift 01" />
+      </label>
+      <label>Project Number <input type="text" id="projNo" placeholder="PE-2024-015" /></label>
+      <label>Client         <input type="text" id="client" placeholder="Client name" /></label>
+      <label>Engineer       <input type="text" id="engineer" placeholder="Engineer name" /></label>
+      <label>Date           <input type="text" id="projDate" /></label>
+    </div>
+
+    <!-- System Configuration -->
+    <div class="config-band">
+      <div class="sec">System Configuration</div>
+      <div class="grid2">
+        <div class="tog-grp">No. of Cylinders
+          <div class="toggle-row" style="margin-top:4px">
+            <input type="radio" id="rcyl1" name="grpCyl" style="display:none" checked onchange="setCyl(1)">
+            <label for="rcyl1" class="tog on" id="togCyl1">1 Cylinder</label>
+            <input type="radio" id="rcyl2" name="grpCyl" style="display:none" onchange="setCyl(2)">
+            <label for="rcyl2" class="tog" id="togCyl2">2 Cylinders</label>
+          </div>
+        </div>
+        <div class="tog-grp">Transmission Type
+          <div class="toggle-row" style="margin-top:4px">
+            <input type="radio" id="rtrans11" name="grpTrans" style="display:none" checked onchange="setTrans('1:1')">
+            <label for="rtrans11" class="tog on" id="togT11">1 : 1</label>
+            <input type="radio" id="rtrans21" name="grpTrans" style="display:none" onchange="setTrans('2:1')">
+            <label for="rtrans21" class="tog" id="togT21">2 : 1</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">Cylinder</div>
+    <div class="grid2">
+      <label>Outer Diameter D<sub>o</sub> <span class="unit">mm</span>
+        <input type="number" id="cylOD" min="50" max="1000" step="1" placeholder="e.g. 140" />
+      </label>
+      <label>Wall Thickness e<sub>wall</sub> <span class="unit">mm</span>
+        <input type="number" id="cylWT" min="1" max="100" step="0.5" placeholder="e.g. 8" />
+      </label>
+    </div>
+
+    <div class="sec">Ram / Piston</div>
+    <div class="grid2">
+      <label>Outer Diameter d <span class="unit">mm</span>
+        <input type="number" id="ramOD" min="20" max="800" step="1" placeholder="e.g. 100" />
+      </label>
+      <div class="tog-grp">Ram Type
+        <div class="toggle-row" style="margin-top:4px">
+          <input type="radio" id="rsolid" name="grpRam" style="display:none" checked onchange="setRam('solid')">
+          <label for="rsolid" class="tog on" id="togSolid">Solid</label>
+          <input type="radio" id="rhollow" name="grpRam" style="display:none" onchange="setRam('hollow')">
+          <label for="rhollow" class="tog" id="togHollow">Hollow</label>
+        </div>
+      </div>
+      <label class="span2" id="hollowRow" style="display:none">
+        Ram Wall Thickness e<sub>ram</sub> <span class="unit">mm</span>
+        <input type="number" id="ramWT" min="1" max="100" step="0.5" placeholder="e.g. 10" />
+      </label>
+    </div>
+
+    <div class="sec">Elevator Parameters</div>
+    <div class="grid2">
+      <label>Empty Car Mass P <span class="unit">kg</span>
+        <input type="number" id="carMass" min="50" max="10000" step="1" placeholder="e.g. 450" />
+      </label>
+      <label>Rated Capacity Q <span class="unit">kg</span>
+        <input type="number" id="capacity" min="50" max="10000" step="1" placeholder="e.g. 630" />
+      </label>
+      <label class="span2">Cabin Travel <span class="unit">mm</span>
+        <input type="number" id="travel" min="500" max="50000" step="1" placeholder="e.g. 6000" />
+      </label>
+      <label class="span2">Max. Unsupported Ram Length L <span class="unit">mm</span>
+        <input type="number" id="ramLength" min="100" max="50000" step="1" placeholder="e.g. 6500 (fully extended ram length)" />
+      </label>
+      <label class="span2">Buckling End Condition k
+        <select id="kFactor" style="margin-top:4px">
+          <option value="2.0">k = 2.0 &mdash; Cantilever (fixed-free)</option>
+          <option value="1.0" selected>k = 1.0 &mdash; Pin-pin (both ends guided)</option>
+          <option value="0.7">k = 0.7 &mdash; Fixed-pin (guided-fixed)</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="sec">Material</div>
+    <div class="grid2">
+      <label class="span2">Material Grade
+        <select id="material" onchange="toggleMat()">
+          <option value="IS2062-E250">IS 2062 E250 — Rp0.2=250, Rm=410 N/mm²</option>
+          <option value="IS2062-E350" selected>IS 2062 E350 — Rp0.2=350, Rm=490 N/mm²</option>
+          <option value="IS2062-E410">IS 2062 E410 — Rp0.2=410, Rm=540 N/mm²</option>
+          <option value="Custom">Custom</option>
+        </select>
+      </label>
+      <label id="rp02Row" style="display:none">
+        Proof Stress R<sub>p0.2</sub> <span class="unit">N/mm²</span>
+        <input type="number" id="customRp02" min="100" max="1200" step="1" placeholder="250" />
+      </label>
+      <label id="rmRow" style="display:none">
+        Tensile Strength R<sub>m</sub> <span class="unit">N/mm²</span>
+        <input type="number" id="customRm" min="200" max="1500" step="1" placeholder="400" />
+      </label>
+    </div>
+
+    <div id="errBox" class="err"></div>
+    <button class="btn-calc" onclick="runCalc()">&#9654;&#160; Calculate &amp; Verify</button>
+    <button class="btn-pdf" id="pdfBtn" disabled onclick="downloadPDF()">&#8595;&#160; Download PDF Datasheet</button>
+
+  </div>
+</div>
+</div>
+
+<!-- ═══ RIGHT: Results ═══ -->
+<div>
+<div class="card">
+  <div class="card-header">&#128203; Design Results &mdash; IS 17900 (Part 2): 2022</div>
+  <div class="card-body">
+
+    <div class="ph" id="ph">
+      <div class="ph-icon">&#128295;</div>
+      <p>Enter your parameters and click <strong>Calculate &amp; Verify</strong>.</p>
+    </div>
+
+    <div id="results" style="display:none">
+      <div class="verdict" id="verdict"></div>
+      <div class="pills" id="pills"></div>
+      <div class="chk-grid" id="chkGrid"></div>
+
+      <div class="rsec">
+        <div class="rsec-title">Derived Dimensions</div>
+        <table class="rtbl"><tbody id="tDim"></tbody></table>
+      </div>
+      <div class="rsec">
+        <div class="rsec-title">Pressure Analysis <small style="font-weight:400;color:var(--muted)">(per cylinder / ram)</small></div>
+        <table class="rtbl"><tbody id="tPress"></tbody></table>
+      </div>
+      <div class="rsec">
+        <div class="rsec-title">Wall Thickness &nbsp;<span class="fref">EN 81-50 Cl. 5.15</span></div>
+        <table class="rtbl"><tbody id="tWall"></tbody></table>
+      </div>
+      <div class="rsec">
+        <div class="rsec-title">Buckling Analysis &nbsp;<span class="fref" id="buckRef">Euler</span> &nbsp;<span class="fref">EN 81-50 Cl. 5.13</span></div>
+        <table class="rtbl"><tbody id="tBuck"></tbody></table>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+</div><!-- end .container -->
+
+<div class="page-footer">
+  Portal Engineering Limited &nbsp;&bull;&nbsp; Your Engineering Excellence Partners
+  &nbsp;&bull;&nbsp; <strong>Pistons are Diamond Polished &mdash; Ra Value &lt; 0.2 Microns</strong>
+</div>
+
+<!-- ═══════════════ STATE ═══════════════ -->
+<script>
+var STATE = { nCyl: 1, trans: '1:1', ramType: 'solid' };
+
+function _afterToggle() {
+  // If results are already visible, recalculate immediately so the
+  // user always sees up-to-date numbers when they flip a toggle.
+  if (document.getElementById('results').style.display !== 'none') {
+    runCalc();
+  }
+}
+
+function setCyl(n) {
+  STATE.nCyl = n;
+  document.getElementById('togCyl1').className = 'tog' + (n === 1 ? ' on' : '');
+  document.getElementById('togCyl2').className = 'tog' + (n === 2 ? ' on' : '');
+  _afterToggle();
+}
+function setTrans(t) {
+  STATE.trans = t;
+  document.getElementById('togT11').className = 'tog' + (t === '1:1' ? ' on' : '');
+  document.getElementById('togT21').className = 'tog' + (t === '2:1' ? ' on' : '');
+  _afterToggle();
+}
+function setRam(t) {
+  STATE.ramType = t;
+  document.getElementById('togSolid').className  = 'tog' + (t === 'solid'  ? ' on' : '');
+  document.getElementById('togHollow').className = 'tog' + (t === 'hollow' ? ' on' : '');
+  document.getElementById('hollowRow').style.display = t === 'hollow' ? 'block' : 'none';
+  _afterToggle();
+}
+function toggleMat() {
+  var c = document.getElementById('material').value === 'Custom';
+  document.getElementById('rp02Row').style.display = c ? 'block' : 'none';
+  document.getElementById('rmRow').style.display   = c ? 'block' : 'none';
+}
+
+document.getElementById('projDate').value = new Date().toLocaleDateString('en-IN');
+</script>
+
+<!-- ═══════════════ CALCULATION ENGINE ═══════════════ -->
+<script>
+var MAT = {
+  'IS2062-E250': { label: 'IS 2062 E250 (Fe410)', Rp02: 250, Rm: 410 },
+  'IS2062-E350': { label: 'IS 2062 E350 (Fe490)', Rp02: 350, Rm: 490 },
+  'IS2062-E410': { label: 'IS 2062 E410 (Fe540)', Rp02: 410, Rm: 540 },
+  'Custom':      { label: 'Custom',                Rp02: null, Rm: null }
+};
+
+function hcCalc(i) {
+  var G = 9.81, E = 210000, RHO = 7.85e-6;
+  var SP = 1.7, OP = 1.4, E0 = 0.5;
+
+  var solid = (i.eRam === 0 || i.eRam >= i.dRam / 2);
+  var Di    = i.Do - 2 * i.eCyl;
+  var diRam = solid ? 0 : i.dRam - 2 * i.eRam;
+  var tR    = i.trans === '2:1' ? 2 : 1;
+
+  // Cross-section properties
+  var Ab = Math.PI / 4 * Di * Di;
+  var Ap = Math.PI / 4 * i.dRam * i.dRam;  // ram OD area — pressure area
+  var Ar = solid ? Math.PI / 4 * i.dRam * i.dRam
+                 : Math.PI / 4 * (i.dRam * i.dRam - diRam * diRam);
+  var Jr = solid ? Math.PI / 64 * Math.pow(i.dRam, 4)
+                 : Math.PI / 64 * (Math.pow(i.dRam, 4) - Math.pow(diRam, 4));
+  var ir = Math.sqrt(Jr / Ar);
+
+  // Load on ram — in 2:1 reeving the movable sheave has 2 rope strands each at T = W/nCyl
+  // so ram force = 2T = tR x (W/nCyl). This is why pressure for 2cyl/2:1 equals 1cyl/1:1.
+  var loadCyl      = (i.P + i.Q) / i.nCyl;
+  var loadCylEmpty = i.P / i.nCyl;
+  var loadRam      = loadCyl      * tR;
+  var loadRamEmpty = loadCylEmpty * tR;
+
+  // Pressure — EN 81-50 Cl. 5.10.2: P_stat = F_ram / A_ram (ram OD area)
+  var ps    = loadRam      * G / Ap;
+  var psEmp = loadRamEmpty * G / Ap;
+  var pm    = OP * ps;  // max system pressure = 1.4 x p_stat
+
+  // Burst pressure — EN 81-50: P_burst = 2 x Rp0.2 x (e_wall - 0.5) / Di
+  var pb      = 2 * i.Rp02 * (i.eCyl - E0) / Di;
+  var bRatio  = pb / ps;  // ratio against p_static per EN 81-50
+  var burstOk = bRatio >= 2.38;
+
+  // Wall thickness — EN 81-50 Cl. 5.15: e_req = 1.7 x (p_max x Di) / (2 x Rp0.2) + 0.5
+  var eCylReq = SP * pm * Di / (2 * i.Rp02) + E0;
+  var cylOk   = i.eCyl >= eCylReq;
+
+  var eRamReq = null, ramOk = true;
+  if (!solid) {
+    eRamReq = SP * pm * diRam / (2 * i.Rp02) + E0;
+    ramOk   = i.eRam >= eRamReq;
+  }
+
+  // Buckling — EN 81-50 Cl. 5.13: Euler (elastic) or Omega method (plastic)
+  var k    = i.k;
+  var L    = i.L;
+  var lam  = k * L / ir;  // slenderness with effective length
+  var lamc = Math.sqrt(Math.PI * Math.PI * E / i.Rp02);  // critical slenderness
+  var mRam = Ar * L * RHO;
+  var ramStroke = i.travel / tR;  // ram stroke (display only)
+
+  var Fbuck, Fsallow, omega, bf;
+  if (lam >= lamc) {
+    // Elastic (Euler) zone
+    Fbuck   = Math.PI * Math.PI * E * Jr / Math.pow(k * L, 2);
+    omega   = null;
+    bf = 'Euler';
+  } else {
+    // Plastic (Omega) zone
+    omega   = 1 + 0.3 * Math.pow(lam / lamc, 1.5);
+    Fbuck   = Ar * i.Rp02 / omega;
+    bf = 'Omega';
+  }
+  Fsallow = Fbuck / 1.4;
+
+  var Fsact  = G * (loadRam + 0.64 * mRam);
+  var SFb    = Fbuck / Fsact;
+  var buckOk = SFb >= 1.4;
+
+  return {
+    solid, Di, diRam, Ab, Ap, Ar, Jr, ir,
+    loadCyl, loadCylEmpty, loadRam, loadRamEmpty,
+    ps, psEmp, pm, pb, bRatio,
+    eCylReq, cylOk, eRamReq, ramOk,
+    mRam, L, k, lam, lamc, omega, bf, Fbuck, Fsallow, Fsact, SFb, buckOk,
+    burstOk, tR, ramStroke,
+    allPass: cylOk && ramOk && buckOk && burstOk
+  };
+}
+</script>
+
+<!-- ═══════════════ PDF GENERATOR ═══════════════ -->
+<script>
+function makePDF(meta, inp, R) {
+  var doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4' });
+  var PW = doc.internal.pageSize.getWidth(), PH = doc.internal.pageSize.getHeight();
+  var ML = 45, MR = PW - 45, y = 0;
+  var BL = [11,61,145], DK = [40,40,40];
+
+  function fv(n,d) { if (n===null||n===undefined||isNaN(n)) return '-'; return (+n).toFixed(d===undefined?3:d); }
+  function hln(yy,c) { c=c||[210,210,210]; doc.setDrawColor(c[0],c[1],c[2]); doc.setLineWidth(0.4); doc.line(ML,yy,MR,yy); }
+  function sec(t) {
+    y+=14; doc.setFillColor(228,236,255); doc.rect(ML,y-11,MR-ML,16,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(BL[0],BL[1],BL[2]);
+    doc.text(t.toUpperCase(),ML+4,y); y+=8; doc.setTextColor(DK[0],DK[1],DK[2]);
+  }
+  function row(lbl,val) {
+    y+=14; doc.setFont('helvetica','normal'); doc.setFontSize(9);
+    doc.setTextColor(DK[0],DK[1],DK[2]); doc.text(String(lbl),ML+4,y);
+    doc.setFont('helvetica','bold'); doc.text(String(val),ML+240,y); doc.setFont('helvetica','normal');
+  }
+  function rowck(lbl,val,ok) {
+    y+=14; doc.setFont('helvetica','normal'); doc.setFontSize(9);
+    doc.setTextColor(DK[0],DK[1],DK[2]); doc.text(String(lbl),ML+4,y);
+    doc.setFont('helvetica','bold'); doc.text(String(val),ML+240,y);
+    var c=ok?[22,163,74]:[220,38,38]; doc.setFillColor(c[0],c[1],c[2]);
+    doc.roundedRect(MR-56,y-9,46,12,3,3,'F'); doc.setTextColor(255,255,255);
+    doc.setFontSize(8); doc.text(ok?'PASS':'FAIL',MR-33,y-1,{align:'center'});
+    doc.setFontSize(9); doc.setTextColor(DK[0],DK[1],DK[2]); doc.setFont('helvetica','normal');
+  }
+  function foot() {
+    var pg=doc.internal.getCurrentPageInfo().pageNumber;
+    hln(PH-40,[180,180,180]);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(120,120,120);
+    doc.text('Portal Engineering Limited  |  Your Engineering Excellence Partners',ML,PH-28);
+    doc.setFont('helvetica','italic');
+    doc.text('Pistons are Diamond Polished  -  Ra Value < 0.2 Microns',ML,PH-17);
+    doc.setFont('helvetica','normal');
+    doc.text('IS 17900 (Part 2): 2022',MR,PH-28,{align:'right'});
+    doc.text('Page '+pg,MR,PH-17,{align:'right'});
+  }
+  function newPage() { doc.addPage(); foot(); y=55; hln(y-4,BL); }
+
+  // PAGE 1 HEADER
+  doc.setFillColor(BL[0],BL[1],BL[2]); doc.rect(0,0,PW,72,'F');
+  doc.setFillColor(255,255,255); doc.circle(ML+18,36,18,'F');
+  doc.setTextColor(BL[0],BL[1],BL[2]); doc.setFont('helvetica','bold'); doc.setFontSize(20);
+  doc.text('P',ML+18,42,{align:'center'});
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(15);
+  doc.text('Portal Engineering Limited',ML+44,26);
+  doc.setFont('helvetica','italic'); doc.setFontSize(9);
+  doc.text('Your Engineering Excellence Partners',ML+44,39);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5);
+  doc.text('Hydraulic Cylinder Design Datasheet  -  IS 17900 (Part 2): 2022',ML+44,52);
+  doc.setFontSize(7.5);
+  doc.text('Generated: '+new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),ML+44,63);
+  var bc=R.allPass?[22,163,74]:[220,38,38];
+  doc.setFillColor(bc[0],bc[1],bc[2]); doc.roundedRect(MR-108,20,103,30,5,5,'F');
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(12);
+  doc.text(R.allPass?'DESIGN SAFE':'DESIGN UNSAFE',MR-56,40,{align:'center'});
+
+  y=88;
+
+  sec('Project Details');
+  [['Project Name',meta.project||'-'],['Project Number',meta.projNo||'-'],
+   ['Client',meta.client||'-'],['Engineer',meta.engineer||'-'],
+   ['Date',meta.date||'-'],['Standard','IS 17900 (Part 2): 2022']
+  ].forEach(function(r){row(r[0],r[1]);});
+
+  sec('System Configuration');
+  row('Number of cylinders', inp.nCyl);
+  row('Transmission', inp.trans+' ('+(inp.trans==='2:1'?'Roped indirect':'Direct acting')+')');
+  row('Ram stroke  (cabin travel / '+R.tR+')', fv(R.ramStroke,0)+' mm');
+  row('Load per cylinder  ((P+Q) / '+inp.nCyl+')', fv(R.loadCyl,1)+' kg');
+  row('Ram force  (x'+R.tR+' reeving, movable sheave with 2 rope strands)', fv(R.loadRam,1)+' kg');
+
+  sec('Input Parameters');
+  row('Cylinder outer diameter D_o', inp.Do+' mm');
+  row('Cylinder wall thickness e_wall', inp.eCyl+' mm');
+  row('Cylinder bore D_i', fv(R.Di,1)+' mm');
+  row('Ram outer diameter d', inp.dRam+' mm');
+  row('Ram type', R.solid?'Solid':'Hollow');
+  if (!R.solid) row('Ram wall thickness e_wall_ram', inp.eRam+' mm');
+  row('Cabin travel', inp.travel+' mm');
+  row('Max unsupported ram length L', inp.L+' mm');
+  row('End condition factor k', inp.k);
+  row('Empty car mass P', inp.P+' kg');
+  row('Rated load Q', inp.Q+' kg');
+  row('Total load P+Q', (inp.P+inp.Q)+' kg');
+  row('Material', inp.matLabel||'-');
+  row('Proof stress R_p0.2', inp.Rp02+' N/mm2');
+  if (inp.Rm) row('Tensile strength R_m (reference)', inp.Rm+' N/mm2');
+
+  sec('Pressure Analysis  [EN 81-50 Cl. 5.10.2]  [1 MPa = 10 bar]');
+  row('Ram pressure area Ap = pi/4 x d_ram^2  (ram OD = '+inp.dRam+' mm)', fv(R.Ap,0)+' mm2');
+  row('Empty load pressure (car only)  p_stat = F_ram / Ap', fv(R.psEmp,3)+' MPa  =  '+fv(R.psEmp*10,1)+' bar');
+  row('Full load static pressure  p_stat = F_ram / Ap', fv(R.ps,3)+' MPa  =  '+fv(R.ps*10,1)+' bar');
+  row('Max system pressure  p_max = 1.4 x p_stat', fv(R.pm,3)+' MPa  =  '+fv(R.pm*10,1)+' bar');
+  row('Burst pressure  (EN 81-50: 2 x Rp0.2 x (e_wall - 0.5) / Di)', fv(R.pb,2)+' MPa  =  '+fv(R.pb*10,1)+' bar');
+  row('Burst ratio  p_burst / p_stat  [req >= 2.38]', fv(R.bRatio,2)+(R.burstOk?'  [>= 2.38 OK]':'  [< 2.38 FAIL]'));
+  foot();
+
+  // PAGE 2
+  newPage();
+
+  sec('Cylinder Wall Thickness Check  [EN 81-50 Cl. 5.15]');
+  row('Formula','e_req = 1.7 x (p_max x Di) / (2 x Rp0.2) + 0.5  where p_max = 1.4 x p_stat,  e0 = 0.5 mm');
+  row('Required e_wall (e_req)', fv(R.eCylReq,2)+' mm');
+  rowck('Provided e_wall', inp.eCyl+' mm', R.cylOk);
+
+  if (!R.solid) {
+    sec('Ram Wall Thickness Check  [EN 81-50 Cl. 5.15]');
+    row('Formula','e_req = 1.7 x (p_max x d_i_ram) / (2 x Rp0.2) + 0.5  where e0 = 0.5 mm');
+    row('Required e_wall_ram (e_req)', fv(R.eRamReq,2)+' mm');
+    rowck('Provided e_wall_ram', inp.eRam+' mm', R.ramOk);
+  }
+
+  sec('Buckling Analysis  [EN 81-50 Cl. 5.13 — '+R.bf+' Method]');
+  row('Unsupported length L', fv(R.L,0)+' mm');
+  row('End condition factor k', fv(R.k,1));
+  row('Effective length kL', fv(R.k*R.L,0)+' mm');
+  row('Ram cross-section area A_n', fv(R.Ar,1)+' mm2');
+  row('Second moment of area J_n', fv(R.Jr/1e6,4)+' x 10^6 mm4');
+  row('Radius of gyration i_n', fv(R.ir,2)+' mm');
+  row('Slenderness lambda = kL / i_n', fv(R.lam,1));
+  row('Critical slenderness lambda_c = pi x sqrt(E / Rp0.2)', fv(R.lamc,1));
+  row('Zone', R.lam>=R.lamc ? 'Elastic (Euler)  lambda >= lambda_c' : 'Plastic (Omega)  lambda < lambda_c');
+  if (R.lam >= R.lamc) {
+    row('F_cr (Euler) = pi^2 x E x J / (kL)^2', fv(R.Fbuck/1000,2)+' kN');
+  } else {
+    row('Omega = 1 + 0.3 x (lambda/lambda_c)^1.5', fv(R.omega,4));
+    row('F_cr (Omega) = An x Rp0.2 / omega', fv(R.Fbuck/1000,2)+' kN');
+  }
+  row('Allowable F_s_allow = F_cr / 1.4  [SF = 1.4]', fv(R.Fsallow/1000,2)+' kN');
+  row('Ram mass estimate  (L x An x rho)', fv(R.mRam,1)+' kg');
+  rowck('Actual force Fs = g x (F_ram + 0.64 x m_ram)', fv(R.Fsact/1000,2)+' kN', R.buckOk);
+  row('Safety factor SF = F_cr / Fs  (required >= 1.4)', fv(R.SFb,2));
+
+  // Summary box
+  y+=18; var BH=70;
+  var sc=R.allPass?[240,253,244]:[254,242,242], bc2=R.allPass?[22,163,74]:[220,38,38];
+  doc.setFillColor(sc[0],sc[1],sc[2]); doc.setDrawColor(bc2[0],bc2[1],bc2[2]);
+  doc.setLineWidth(1.5); doc.roundedRect(ML,y,MR-ML,BH,6,6,'FD');
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(bc2[0],bc2[1],bc2[2]);
+  doc.text(R.allPass?'DESIGN IS SAFE AS PER IS 17900 (PART 2): 2022'
+                    :'DESIGN DOES NOT SATISFY IS 17900 (PART 2): 2022',
+           PW/2,y+22,{align:'center'});
+  var chks=[{l:'Cyl. Wall',ok:R.cylOk},{l:'Ram Wall',ok:R.ramOk,sk:R.solid},{l:'Buckling',ok:R.buckOk},{l:'Burst >= 2.38',ok:R.burstOk}].filter(function(c){return !c.sk;});
+  var sp=(MR-ML)/chks.length;
+  chks.forEach(function(c,i){
+    var cx=ML+sp*i+sp/2, cc=c.ok?[22,163,74]:[220,38,38];
+    doc.setFillColor(cc[0],cc[1],cc[2]); doc.roundedRect(cx-42,y+34,84,14,3,3,'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(8);
+    doc.text((c.ok?'[PASS] ':'[FAIL] ')+c.l,cx,y+44,{align:'center'});
+    doc.setTextColor(DK[0],DK[1],DK[2]);
+  });
+  y+=BH+14;
+
+  sec('Notes');
+  ['1. Ram force = (P+Q) / n_cyl x tR.  In 2:1 reeving, the movable sheave has 2 rope strands each at',
+   '   T = W/n_cyl, so ram force = 2T = tR x W/n_cyl.  This is why 2cyl/2:1 gives same pressure as 1cyl/1:1.',
+   '2. Wall thickness per EN 81-50 Cl. 5.15: e_req = 1.7 x (p_max x Di) / (2 x Rp0.2) + 0.5 mm.',
+   '3. Burst pressure per EN 81-50: p_burst = 2 x Rp0.2 x (e - 0.5) / Di.  Criterion: p_burst >= 2.38 x p_stat.',
+   '4. Buckling per EN 81-50 Cl. 5.13.  L = max unsupported ram length; k = end condition factor.',
+   '   Elastic zone (lambda >= lambda_c): Euler formula, SF = F_cr / Fs >= 1.4.',
+   '   Plastic zone (lambda < lambda_c): Omega method (omega = 1 + 0.3 x (lam/lam_c)^1.5), SF >= 1.4.',
+   '5. Welding seam checks (EN 81-50 Cl. 5.15.2+) apply where seams are present.',
+   '6. Additional checks required for certification: fatigue, end caps, seal grooves, weld NDT,',
+   '   safety valve setting, anchorage, guide rails, and all EN 81-20 / IS 17900 items.',
+   '7. This datasheet must be reviewed by a qualified engineer before use in construction.'
+  ].forEach(function(n){ y+=12; doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(80,80,80); doc.text(n,ML+4,y); });
+
+  y+=26; hln(y,[180,180,180]); y+=14;
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(DK[0],DK[1],DK[2]);
+  doc.text('Prepared by:',ML+4,y); doc.text('Checked by:',ML+185,y); doc.text('Approved by:',ML+365,y);
+  y+=30;
+  doc.text('_____________________',ML+4,y); doc.text('_____________________',ML+185,y); doc.text('_____________________',ML+365,y);
+  y+=12; doc.text(meta.engineer||'',ML+4,y); doc.text('Date: _____________',ML+185,y); doc.text('Date: _____________',ML+365,y);
+  foot();
+
+  doc.save('HC_Datasheet_'+(meta.project||'Project').replace(/\s+/g,'_')+'_'+new Date().toISOString().slice(0,10)+'.pdf');
+}
+</script>
+
+<!-- ═══════════════ UI CONTROLLER ═══════════════ -->
+<script>
+var _meta=null, _inp=null, _res=null;
+
+function fv(n,d){ if(n===null||n===undefined||isNaN(n))return '-'; return (+n).toFixed(d===undefined?3:d); }
+function bdg(ok){ return '<span class="bdg '+(ok?'pass">&#10004; PASS':'fail">&#10008; FAIL')+'</span>'; }
+function tbl(id,rows){
+  var h='';
+  rows.forEach(function(r){ h+='<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+(r[2]!==undefined?bdg(r[2]):'')+'</td></tr>'; });
+  document.getElementById(id).innerHTML=h;
+}
+
+function runCalc() {
+  var errEl = document.getElementById('errBox');
+  errEl.style.display = 'none';
+
+  try {
+    var Do   = parseFloat(document.getElementById('cylOD').value);
+    var eCyl = parseFloat(document.getElementById('cylWT').value);
+    var dRam = parseFloat(document.getElementById('ramOD').value);
+    var eRam = STATE.ramType==='hollow' ? parseFloat(document.getElementById('ramWT').value) : 0;
+    var travel = parseFloat(document.getElementById('travel').value);
+    var ramL   = parseFloat(document.getElementById('ramLength').value);
+    var kFact  = parseFloat(document.getElementById('kFactor').value);
+    var P  = parseFloat(document.getElementById('carMass').value);
+    var Q  = parseFloat(document.getElementById('capacity').value);
+    var matKey = document.getElementById('material').value;
+    var matDef = MAT[matKey];
+    var Rp02 = matKey==='Custom' ? parseFloat(document.getElementById('customRp02').value) : matDef.Rp02;
+    var Rm   = matKey==='Custom' ? parseFloat(document.getElementById('customRm').value)   : matDef.Rm;
+    var matLabel = matKey==='Custom' ? 'Custom (Rp02='+Rp02+', Rm='+Rm+')' : matDef.label;
+
+    var errs = [];
+    if (!Do   || Do<=0)   errs.push('Cylinder outer diameter required.');
+    if (!eCyl || eCyl<=0) errs.push('Cylinder wall thickness required.');
+    if (!dRam || dRam<=0) errs.push('Ram outer diameter required.');
+    if (STATE.ramType==='hollow' && (!eRam||eRam<=0)) errs.push('Ram wall thickness required for hollow ram.');
+    if (!travel||travel<=0) errs.push('Cabin travel required.');
+    if (!ramL ||ramL<=0)  errs.push('Max unsupported ram length L required.');
+    if (!P||P<=0) errs.push('Empty car mass required.');
+    if (!Q||Q<=0) errs.push('Rated capacity required.');
+    if (!Rp02) errs.push('Material proof stress Rp0.2 required.');
+    var Di = Do - 2*eCyl;
+    if (Di<=0) errs.push('Cylinder bore (Do - 2×eWall) is zero or negative.');
+    if (Do&&eCyl&&dRam&&dRam>=Di) errs.push('Ram diameter ('+dRam+' mm) must be less than bore ('+fv(Di,1)+' mm).');
+    if (STATE.ramType==='hollow'&&eRam&&eRam>=dRam/2) errs.push('Ram wall thickness too large — use Solid type.');
+    if (Rp02&&Rm&&Rp02>=Rm) errs.push('Proof stress must be less than tensile strength (informational check).');
+
+    if (errs.length) {
+      errEl.style.display='block';
+      errEl.innerHTML='<strong>Please fix:</strong><ul style="margin:.4em 0 0 1.2em">'+errs.map(function(e){return '<li>'+e+'</li>';}).join('')+'</ul>';
+      return;
+    }
+
+    var inp = { Do:Do, eCyl:eCyl, dRam:dRam, eRam:eRam, travel:travel, L:ramL, k:kFact,
+                P:P, Q:Q, Rp02:Rp02, Rm:Rm, matLabel:matLabel,
+                nCyl:STATE.nCyl, trans:STATE.trans };
+    var res = hcCalc(inp);
+    _inp=inp; _res=res;
+    _meta = {
+      project:  document.getElementById('projName').value,
+      projNo:   document.getElementById('projNo').value,
+      client:   document.getElementById('client').value,
+      engineer: document.getElementById('engineer').value,
+      date:     document.getElementById('projDate').value
+    };
+
+    document.getElementById('ph').style.display='none';
+    document.getElementById('results').style.display='block';
+
+    // Verdict
+    var v=document.getElementById('verdict');
+    v.className='verdict '+(res.allPass?'safe':'fail');
+    v.innerHTML=res.allPass?'&#10004;&#160; Design is SAFE as per IS 17900 (Part 2): 2022'
+                           :'&#10008;&#160; Design DOES NOT meet IS 17900 (Part 2): 2022';
+
+    // Pills
+    var tR = STATE.trans==='2:1'?2:1;
+    document.getElementById('pills').innerHTML=
+      '<span class="pill">'+STATE.nCyl+' Cylinder'+(STATE.nCyl>1?'s':'')+'</span>'+
+      '<span class="pill">Transmission '+STATE.trans+'</span>'+
+      '<span class="pill">Ram stroke: '+fv(res.ramStroke,0)+' mm</span>'+
+      '<span class="pill">Load/ram: '+fv(res.loadRam,0)+' kg</span>'+
+      '<span class="pill">Full load: '+fv(res.ps,2)+' MPa / '+fv(res.ps*10,1)+' bar</span>';
+
+    // Check cards
+    document.getElementById('chkGrid').innerHTML=[
+      {lbl:'Cylinder Wall', sub:'Req: '+fv(res.eCylReq,2)+' mm &mdash; Got: '+eCyl+' mm', ok:res.cylOk},
+      {lbl:'Ram Wall',      sub:res.solid?'Solid &mdash; N/A':'Req: '+fv(res.eRamReq,2)+' mm &mdash; Got: '+eRam+' mm', ok:res.ramOk},
+      {lbl:'Buckling',      sub:'SF = '+fv(res.SFb,2)+' (req &ge; 1.4)', ok:res.buckOk},
+      {lbl:'Burst Ratio',   sub:fv(res.bRatio,2)+' (req &ge; 2.38)', ok:res.burstOk},
+    ].map(function(c){
+      return '<div class="chk '+(c.ok?'pass':'fail')+'">'+
+             '<div class="ci-icon">'+(c.ok?'&#9989;':'&#10060;')+'</div>'+
+             '<div class="ci-label">'+c.lbl+'</div>'+
+             '<div class="ci-val">'+c.sub+'</div></div>';
+    }).join('');
+
+    // Dimensions table
+    tbl('tDim',[
+      ['Cylinder bore D<sub>i</sub>', fv(res.Di,1)+' mm'],
+      ['Ram inner diameter d<sub>i</sub>', res.solid?'Solid':fv(res.diRam,1)+' mm'],
+      ['Cylinder bore area (reference)', fv(res.Ab,0)+' mm&sup2;'],
+      ['<strong>Ram pressure area A<sub>p</sub></strong> (ram OD &mdash; used for p)', '<strong>'+fv(res.Ap,0)+' mm&sup2;</strong>'],
+      ['Ram cross-section A<sub>n</sub> (buckling/mass)', fv(res.Ar,1)+' mm&sup2;'],
+      ['Second moment of area J<sub>n</sub>', fv(res.Jr/1e6,4)+' &times;10&sup6; mm&sup4;'],
+      ['Radius of gyration i<sub>n</sub>', fv(res.ir,2)+' mm'],
+    ]);
+
+    // Pressure table (1 MPa = 10 bar)
+    tbl('tPress',[
+      ['Total load P + Q', (P+Q)+' kg'],
+      ['Load per cylinder (P+Q &divide; '+STATE.nCyl+')', fv(res.loadCyl,1)+' kg  |  empty: '+fv(res.loadCylEmpty,1)+' kg'],
+      ['Ram force (&times;'+tR+' reeving &mdash; 2 rope strands on sheave)', fv(res.loadRam,1)+' kg  |  empty: '+fv(res.loadRamEmpty,1)+' kg'],
+      ['Ram pressure area A<sub>p</sub> = &pi;/4 &times; d<sub>ram</sub>&sup2;  ('+dRam+' mm OD)', fv(res.Ap,0)+' mm&sup2;'],
+      ['<strong>Empty load pressure</strong> (car only)', fv(res.psEmp,3)+' MPa &nbsp;=&nbsp; <strong>'+fv(res.psEmp*10,1)+' bar</strong>'],
+      ['<strong>Full load static pressure</strong> p<sub>stat</sub>', fv(res.ps,3)+' MPa &nbsp;=&nbsp; <strong>'+fv(res.ps*10,1)+' bar</strong>'],
+      ['<strong>Max system pressure</strong> p<sub>max</sub> = 1.4 &times; p<sub>stat</sub>', fv(res.pm,3)+' MPa &nbsp;=&nbsp; <strong>'+fv(res.pm*10,1)+' bar</strong>'],
+      ['Burst pressure (EN 81-50: 2&times;R<sub>p0.2</sub>&times;(e&minus;0.5)/D<sub>i</sub>)', fv(res.pb,2)+' MPa &nbsp;=&nbsp; '+fv(res.pb*10,1)+' bar'],
+      ['Burst ratio p<sub>burst</sub> / p<sub>stat</sub>', fv(res.bRatio,2)+(res.burstOk?' &#9989; &ge;2.38':' &#10060; &lt;2.38'), res.burstOk],
+    ]);
+
+    // Wall thickness
+    var wr=[
+      ['Formula: e<sub>req</sub> = 1.7 &times; (p<sub>max</sub> &times; D<sub>i</sub>) / (2 &times; R<sub>p0.2</sub>) + 0.5', ''],
+      ['Cylinder &mdash; required e<sub>wall</sub>', fv(res.eCylReq,2)+' mm'],
+      ['Cylinder &mdash; provided e<sub>wall</sub>', eCyl+' mm', res.cylOk],
+    ];
+    if(!res.solid){
+      wr.push(['Formula: e<sub>req</sub> = 1.7 &times; (p<sub>max</sub> &times; d<sub>i,ram</sub>) / (2 &times; R<sub>p0.2</sub>) + 0.5', '']);
+      wr.push(['Ram &mdash; required e<sub>wall</sub>', fv(res.eRamReq,2)+' mm']);
+      wr.push(['Ram &mdash; provided e<sub>wall</sub>', eRam+' mm', res.ramOk]);
+    } else {
+      wr.push(['Ram &mdash; solid section','N/A']);
+    }
+    tbl('tWall',wr);
+
+    // Buckling
+    document.getElementById('buckRef').textContent = res.lam>=res.lamc ? 'Euler (elastic)' : 'Omega (plastic)';
+    var buckRows = [
+      ['Unsupported length L (user input)', fv(res.L,0)+' mm'],
+      ['End condition factor k', fv(res.k,1)],
+      ['Effective length k &times; L', fv(res.k*res.L,0)+' mm'],
+      ['Ram cross-section area A<sub>n</sub>', fv(res.Ar,1)+' mm&sup2;'],
+      ['Second moment of area J<sub>n</sub>', fv(res.Jr/1e6,4)+' &times;10&sup6; mm&sup4;'],
+      ['Radius of gyration i<sub>n</sub>', fv(res.ir,2)+' mm'],
+      ['Slenderness &lambda; = kL / i<sub>n</sub>', fv(res.lam,1)],
+      ['Critical slenderness &lambda;<sub>c</sub> = &pi; &radic;(E / R<sub>p0.2</sub>)', fv(res.lamc,1)],
+      ['Zone', res.lam>=res.lamc ? 'Elastic (Euler) &mdash; &lambda; &ge; &lambda;<sub>c</sub>' : 'Plastic (Omega) &mdash; &lambda; &lt; &lambda;<sub>c</sub>'],
+    ];
+    if (res.lam >= res.lamc) {
+      buckRows.push(['F<sub>cr</sub> (Euler) = &pi;&sup2; &times; E &times; J / (kL)&sup2;', fv(res.Fbuck/1000,2)+' kN']);
+    } else {
+      buckRows.push(['&omega; = 1 + 0.3 &times; (&lambda;/&lambda;<sub>c</sub>)<sup>1.5</sup>', fv(res.omega,4)]);
+      buckRows.push(['F<sub>cr</sub> (Omega) = A<sub>n</sub> &times; R<sub>p0.2</sub> / &omega;', fv(res.Fbuck/1000,2)+' kN']);
+    }
+    buckRows.push(['F<sub>s,allow</sub> = F<sub>cr</sub> / 1.4  (required SF = 1.4)', fv(res.Fsallow/1000,2)+' kN']);
+    buckRows.push(['Ram mass estimate (L &times; A<sub>n</sub> &times; &rho;)', fv(res.mRam,1)+' kg']);
+    buckRows.push(['Actual load F<sub>s</sub> = g &times; (F<sub>ram</sub> + 0.64 &times; m<sub>ram</sub>)', fv(res.Fsact/1000,2)+' kN', res.buckOk]);
+    buckRows.push(['Safety factor SF = F<sub>cr</sub> / F<sub>s</sub>', fv(res.SFb,2)+'  (req &ge; 1.4)']);
+    tbl('tBuck', buckRows);
+
+    document.getElementById('pdfBtn').disabled=false;
+
+  } catch(ex) {
+    errEl.style.display='block';
+    errEl.innerHTML='<strong>Error:</strong> '+ex.message;
+  }
+}
+
+function downloadPDF() {
+  if (!_res) return;
+  makePDF(_meta, _inp, _res);
+}
+</script>
+</body>
+</html>
