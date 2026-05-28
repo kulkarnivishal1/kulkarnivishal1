@@ -331,7 +331,8 @@ function hcCalc(i) {
   var diRam = solid ? 0 : i.dRam - 2 * i.eRam;
   var tR    = i.trans === '2:1' ? 2 : 1;   // transmission ratio
 
-  var Ab = Math.PI / 4 * Di * Di;
+  var Ab = Math.PI / 4 * Di * Di;           // cylinder bore area (for wall thickness / burst check)
+  var Ap = Math.PI / 4 * i.dRam * i.dRam;  // ram OD area — pressure area for single-acting ram type
   var Ar = solid ? Math.PI / 4 * i.dRam * i.dRam
                  : Math.PI / 4 * (i.dRam * i.dRam - diRam * diRam);
   var Jr = solid ? Math.PI / 64 * Math.pow(i.dRam, 4)
@@ -344,9 +345,9 @@ function hcCalc(i) {
   var loadRam      = loadCyl      / tR;       // kg — axial load on ram (full)
   var loadRamEmpty = loadCylEmpty / tR;       // kg — axial load on ram (empty)
 
-  // Pressure (1 N/mm² = 1 MPa; × 10 = bar)
-  var ps     = loadRam      * G / Ab;  // MPa — full load working pressure
-  var psEmp  = loadRamEmpty * G / Ab;  // MPa — empty load (car only) pressure
+  // Pressure — single-acting ram type: p = F / A_ram (ram OD area, not bore area)
+  var ps     = loadRam      * G / Ap;  // MPa — full load working pressure
+  var psEmp  = loadRamEmpty * G / Ap;  // MPa — empty load (car only) pressure
   var pm     = OP * ps;                // MPa — max pressure (1.4 × working)
   var pb     = 2 * i.Rm * i.eCyl / Di; // MPa — burst (Barlow thin-wall)
 
@@ -380,7 +381,7 @@ function hcCalc(i) {
   var burstOk = bRatio >= 2.5;
 
   return {
-    solid, Di, diRam, Ab, Ar, Jr, ir,
+    solid, Di, diRam, Ab, Ap, Ar, Jr, ir,
     loadCyl, loadCylEmpty, loadRam, loadRamEmpty,
     ps, psEmp, pm, pb, bRatio,
     eCylReq, cylOk, eRamReq, ramOk,
@@ -482,11 +483,12 @@ function makePDF(meta, inp, R) {
   row('Tensile strength R_m', inp.Rm+' N/mm2');
 
   sec('Pressure Analysis (per cylinder, per ram)  [1 MPa = 10 bar]');
-  row('Bore area A', fv(R.Ab,0)+' mm2');
-  row('Empty load pressure (car only)', fv(R.psEmp,3)+' MPa  =  '+fv(R.psEmp*10,1)+' bar');
-  row('Full load working pressure p', fv(R.ps,3)+' MPa  =  '+fv(R.ps*10,1)+' bar');
+  row('Cylinder bore area  (reference only)', fv(R.Ab,0)+' mm2');
+  row('Ram pressure area Ap  (pi/4 x d_ram^2, ram OD)', fv(R.Ap,0)+' mm2');
+  row('Empty load pressure (car only)  p = F / Ap', fv(R.psEmp,3)+' MPa  =  '+fv(R.psEmp*10,1)+' bar');
+  row('Full load working pressure  p = F / Ap', fv(R.ps,3)+' MPa  =  '+fv(R.ps*10,1)+' bar');
   row('Max system pressure (1.4 x p)', fv(R.pm,3)+' MPa  =  '+fv(R.pm*10,1)+' bar');
-  row('Burst pressure - Barlow (2 x Rm x e / Di)', fv(R.pb,2)+' MPa  =  '+fv(R.pb*10,1)+' bar');
+  row('Burst pressure - Barlow  (2 x Rm x e_wall / Di)', fv(R.pb,2)+' MPa  =  '+fv(R.pb*10,1)+' bar');
   row('Burst ratio (p_burst / p_max)', fv(R.bRatio,2)+(R.burstOk?'  [>= 2.5 OK]':'  [< 2.5 FAIL]'));
   foot();
 
@@ -662,8 +664,9 @@ function runCalc() {
     tbl('tDim',[
       ['Cylinder bore D<sub>i</sub>', fv(res.Di,1)+' mm'],
       ['Ram inner diameter d<sub>i</sub>', res.solid?'Solid':fv(res.diRam,1)+' mm'],
-      ['Bore area A', fv(res.Ab,0)+' mm&sup2;'],
-      ['Ram cross-section A<sub>n</sub>', fv(res.Ar,1)+' mm&sup2;'],
+      ['Cylinder bore area (reference)', fv(res.Ab,0)+' mm&sup2;'],
+      ['<strong>Ram pressure area A<sub>p</sub></strong> (ram OD &mdash; used for p)', '<strong>'+fv(res.Ap,0)+' mm&sup2;</strong>'],
+      ['Ram cross-section A<sub>n</sub> (buckling/mass)', fv(res.Ar,1)+' mm&sup2;'],
       ['Second moment of area J<sub>n</sub>', fv(res.Jr/1e6,4)+' &times;10&sup6; mm&sup4;'],
       ['Radius of gyration i<sub>n</sub>', fv(res.ir,2)+' mm'],
     ]);
@@ -673,10 +676,11 @@ function runCalc() {
       ['Total load P + Q', (P+Q)+' kg'],
       ['Load per cylinder (&divide;'+STATE.nCyl+')', fv(res.loadCyl,1)+' kg  |  empty: '+fv(res.loadCylEmpty,1)+' kg'],
       ['Axial load per ram (&divide;'+tR+')', fv(res.loadRam,1)+' kg  |  empty: '+fv(res.loadRamEmpty,1)+' kg'],
+      ['Pressure area A<sub>p</sub> = &pi;/4 &times; d<sub>ram</sub>&sup2;  (ram OD = '+dRam+' mm)', fv(res.Ap,0)+' mm&sup2;'],
       ['<strong>Empty load pressure</strong> (car only)', fv(res.psEmp,3)+' MPa &nbsp;=&nbsp; <strong>'+fv(res.psEmp*10,1)+' bar</strong>'],
       ['<strong>Full load working pressure</strong> p', fv(res.ps,3)+' MPa &nbsp;=&nbsp; <strong>'+fv(res.ps*10,1)+' bar</strong>'],
       ['<strong>Max system pressure</strong> (1.4&times;p)', fv(res.pm,3)+' MPa &nbsp;=&nbsp; <strong>'+fv(res.pm*10,1)+' bar</strong>'],
-      ['Burst pressure &mdash; Barlow', fv(res.pb,2)+' MPa &nbsp;=&nbsp; '+fv(res.pb*10,1)+' bar'],
+      ['Burst pressure &mdash; Barlow (cyl wall)', fv(res.pb,2)+' MPa &nbsp;=&nbsp; '+fv(res.pb*10,1)+' bar'],
       ['Burst ratio p<sub>burst</sub>/p<sub>max</sub>', fv(res.bRatio,2)+(res.burstOk?' &#9989; &ge;2.5':' &#10060; &lt;2.5'), res.burstOk],
     ]);
 
