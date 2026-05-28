@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hydraulic Cylinder Datasheet — Portal Engineering</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%230b3d91'/><text x='32' y='44' font-size='40' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>P</text></svg>" />
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="hydraulic-calc.js"></script>
+<script src="hydraulic-report.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue:     #0b3d91;
+    --blue-lt:  #e8f0fe;
+    --blue-mid: #1a56c9;
+    --green:    #16a34a;
+    --red:      #dc2626;
+    --orange:   #ea580c;
+    --gray1:    #f8f9fa;
+    --gray2:    #e9ecef;
+    --gray3:    #ced4da;
+    --text:     #212529;
+    --muted:    #6c757d;
+    --radius:   8px;
+  }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #f0f4f8;
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  .app-header {
+    background: var(--blue);
+    color: #fff;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .logo {
+    width: 40px; height: 40px;
+    background: #fff; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 20px; color: var(--blue);
+    flex-shrink: 0;
+  }
+  .brand h1 { font-size: 1.05rem; font-weight: 700; line-height: 1.2; }
+  .brand p  { font-size: 0.72rem; opacity: .75; }
+  .header-std {
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: .03em;
+  }
+
+  /* ── Layout ── */
+  .container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 24px 20px;
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .container { grid-template-columns: 1fr; }
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: 0 1px 4px rgba(0,0,0,.08), 0 2px 12px rgba(0,0,0,.05);
+    overflow: hidden;
+  }
+  .card-header {
+    background: var(--blue);
+    color: #fff;
+    padding: 12px 18px;
+    font-weight: 700;
+    font-size: .9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-header .icon { font-size: 1.1rem; }
+  .card-body { padding: 16px 18px; }
+
+  /* ── Form ── */
+  .section-label {
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--blue);
+    margin: 14px 0 8px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid var(--blue-lt);
+  }
+  .section-label:first-child { margin-top: 0; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .span2 { grid-column: span 2; }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: .8rem;
+    font-weight: 600;
+    color: #495057;
+  }
+  label span.unit {
+    font-size: .7rem;
+    font-weight: 400;
+    color: var(--muted);
+    margin-left: 4px;
+  }
+
+  input[type=text], input[type=number], select, textarea {
+    border: 1.5px solid var(--gray3);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: .85rem;
+    font-family: inherit;
+    width: 100%;
+    transition: border-color .15s, box-shadow .15s;
+    background: var(--gray1);
+    color: var(--text);
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--blue-mid);
+    box-shadow: 0 0 0 3px rgba(26,86,201,.15);
+    background: #fff;
+  }
+  input[type=number] { font-family: 'Courier New', monospace; }
+
+  .radio-group { display: flex; gap: 10px; }
+  .radio-group label {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    font-weight: 400;
+    cursor: pointer;
+    padding: 6px 12px;
+    border: 1.5px solid var(--gray3);
+    border-radius: 6px;
+    flex: 1;
+    justify-content: center;
+    transition: all .15s;
+  }
+  .radio-group label:has(input:checked) {
+    background: var(--blue-lt);
+    border-color: var(--blue-mid);
+    color: var(--blue);
+    font-weight: 700;
+  }
+  .radio-group input[type=radio] { display: none; }
+
+  #customMat { display: none; }
+  #hollowWall { display: none; }
+
+  .btn-calc {
+    width: 100%;
+    margin-top: 14px;
+    padding: 13px;
+    background: var(--blue);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: .95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s, transform .1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-calc:hover  { background: var(--blue-mid); }
+  .btn-calc:active { transform: scale(.98); }
+
+  .btn-pdf {
+    width: 100%;
+    margin-top: 12px;
+    padding: 11px;
+    background: #fff;
+    color: var(--blue);
+    border: 2px solid var(--blue);
+    border-radius: 8px;
+    font-size: .88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-pdf:hover { background: var(--blue-lt); }
+  .btn-pdf:disabled { opacity: .45; cursor: not-allowed; }
+
+  /* ── Results panel ── */
+  #results { display: none; }
+  #results.visible { display: block; }
+
+  .verdict-banner {
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    font-weight: 800;
+    font-size: 1.15rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .verdict-banner.safe  { background: #f0fdf4; color: var(--green); border: 2px solid var(--green); }
+  .verdict-banner.fail  { background: #fef2f2; color: var(--red);   border: 2px solid var(--red);   }
+
+  .result-section {
+    margin-bottom: 16px;
+  }
+  .result-section-title {
+    font-size: .75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--blue);
+    padding: 6px 10px;
+    background: var(--blue-lt);
+    border-radius: 5px 5px 0 0;
+    border-left: 3px solid var(--blue);
+  }
+  .result-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .82rem;
+  }
+  .result-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--gray2);
+    vertical-align: middle;
+  }
+  .result-table td:first-child {
+    color: var(--muted);
+    width: 55%;
+  }
+  .result-table td:nth-child(2) {
+    font-weight: 600;
+    font-family: 'Courier New', monospace;
+  }
+  .result-table tr:last-child td { border-bottom: none; }
+  .result-table tr:nth-child(even) { background: #fafafa; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: .75rem;
+    font-weight: 700;
+    font-family: inherit;
+  }
+  .badge.pass { background: #dcfce7; color: var(--green); }
+  .badge.fail { background: #fee2e2; color: var(--red);   }
+  .badge.warn { background: #ffedd5; color: var(--orange); }
+
+  .check-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .check-item {
+    border-radius: 8px;
+    padding: 12px 14px;
+    border: 1.5px solid;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .check-item.pass { background: #f0fdf4; border-color: #86efac; }
+  .check-item.fail { background: #fef2f2; border-color: #fca5a5; }
+  .check-item .ci-icon { font-size: 1.3rem; }
+  .check-item .ci-label { font-size: .75rem; font-weight: 700; }
+  .check-item .ci-val   { font-size: .72rem; color: var(--muted); }
+
+  .placeholder {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  .placeholder .ph-icon { font-size: 3rem; margin-bottom: 12px; }
+  .placeholder p { font-size: .88rem; }
+
+  .formula-ref {
+    font-size: .7rem;
+    color: var(--blue);
+    background: var(--blue-lt);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+
+  .error-box {
+    background: #fef2f2;
+    border: 1.5px solid #fca5a5;
+    border-radius: 8px;
+    padding: 12px 14px;
+    color: var(--red);
+    font-size: .85rem;
+    margin-top: 12px;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand">
+    <div class="logo">P</div>
+    <div>
+      <h1>Portal Engineering Private Limited</h1>
+      <p>Hydraulic Cylinder Design Datasheet</p>
+    </div>
+  </div>
+  <div class="header-std">IS 17900 (Part 2) : 2022</div>
+</header>
+
+<div class="container">
+
+  <!-- ── LEFT: Inputs ──────────────────────────────────────────────────── -->
+  <div>
+    <div class="card">
+      <div class="card-header"><span class="icon">⚙</span> Design Inputs</div>
+      <div class="card-body">
+
+        <div class="section-label">Project Information</div>
+        <div class="form-grid">
+          <label class="span2">Project Name
+            <input type="text" id="projName" placeholder="e.g. MG Road Tower — Lift 01" />
+          </label>
+          <label>Project Number
+            <input type="text" id="projNo" placeholder="e.g. PE-2024-015" />
+          </label>
+          <label>Client
+            <input type="text" id="client" placeholder="Client name" />
+          </label>
+          <label>Engineer
+            <input type="text" id="engineer" placeholder="Engineer name" />
+          </label>
+          <label>Date
+            <input type="text" id="projDate" placeholder="dd/mm/yyyy" />
+          </label>
+        </div>
+
+        <div class="section-label">Cylinder</div>
+        <div class="form-grid">
+          <label>Outer Diameter D<sub>o</sub><span class="unit">mm</span>
+            <input type="number" id="cylOD" min="50" max="1000" step="1" placeholder="e.g. 140" />
+          </label>
+          <label>Wall Thickness e<sub>wall</sub><span class="unit">mm</span>
+            <input type="number" id="cylWT" min="1" max="100" step="0.5" placeholder="e.g. 8" />
+          </label>
+        </div>
+
+        <div class="section-label">Ram / Piston</div>
+        <div class="form-grid">
+          <label>Outer Diameter d<span class="unit">mm</span>
+            <input type="number" id="ramOD" min="20" max="800" step="1" placeholder="e.g. 100" />
+          </label>
+          <label>Ram Type
+            <div class="radio-group" style="margin-top:2px">
+              <label><input type="radio" name="ramType" value="solid" checked onchange="toggleHollow()"> Solid</label>
+              <label><input type="radio" name="ramType" value="hollow" onchange="toggleHollow()"> Hollow</label>
+            </div>
+          </label>
+          <label id="hollowWall">Wall Thickness e<sub>ram</sub><span class="unit">mm</span>
+            <input type="number" id="ramWT" min="1" max="100" step="0.5" placeholder="e.g. 10" />
+          </label>
+        </div>
+
+        <div class="section-label">Elevator Parameters</div>
+        <div class="form-grid">
+          <label class="span2">Cabin Travel<span class="unit">mm</span>
+            <input type="number" id="travel" min="500" max="50000" step="1" placeholder="e.g. 6000" />
+          </label>
+          <label>Empty Car Mass P<span class="unit">kg</span>
+            <input type="number" id="carMass" min="50" max="10000" step="1" placeholder="e.g. 450" />
+          </label>
+          <label>Rated Capacity Q<span class="unit">kg</span>
+            <input type="number" id="capacity" min="50" max="10000" step="1" placeholder="e.g. 630" />
+          </label>
+        </div>
+
+        <div class="section-label">Material</div>
+        <div class="form-grid">
+          <label class="span2">Material Grade
+            <select id="material" onchange="toggleMaterial()">
+              <option value="IS2062-E250">IS 2062 E250 — R_p0.2 = 250 N/mm², R_m = 410 N/mm²</option>
+              <option value="IS2062-E350" selected>IS 2062 E350 — R_p0.2 = 350 N/mm², R_m = 490 N/mm²</option>
+              <option value="IS2062-E410">IS 2062 E410 — R_p0.2 = 410 N/mm², R_m = 540 N/mm²</option>
+              <option value="Custom">Custom</option>
+            </select>
+          </label>
+          <div id="customMat" class="span2 form-grid" style="grid-template-columns:1fr 1fr; gap:10px">
+            <label>Proof Stress R<sub>p0.2</sub><span class="unit">N/mm²</span>
+              <input type="number" id="customRp02" min="100" max="1200" step="1" placeholder="e.g. 250" />
+            </label>
+            <label>Tensile Strength R<sub>m</sub><span class="unit">N/mm²</span>
+              <input type="number" id="customRm" min="200" max="1500" step="1" placeholder="e.g. 400" />
+            </label>
+          </div>
+        </div>
+
+        <div id="errBox" class="error-box"></div>
+
+        <button class="btn-calc" onclick="runCalc()">
+          ▶&ensp;Calculate &amp; Verify
+        </button>
+        <button class="btn-pdf" id="pdfBtn" onclick="downloadPDF()" disabled>
+          ↓&ensp;Download PDF Datasheet
+        </button>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RIGHT: Results ──────────────────────────────────────────────────── -->
+  <div>
+    <div class="card">
+      <div class="card-header"><span class="icon">📋</span> Design Results — IS 17900 (Part 2): 2022</div>
+      <div class="card-body">
+
+        <!-- Placeholder before calculation -->
+        <div class="placeholder" id="placeholder">
+          <div class="ph-icon">🔩</div>
+          <p>Enter design parameters and click <strong>Calculate &amp; Verify</strong><br>to generate the IS 17900 datasheet.</p>
+        </div>
+
+        <!-- Results (hidden until calculated) -->
+        <div id="results">
+
+          <!-- Verdict banner -->
+          <div class="verdict-banner" id="verdictBanner"></div>
+
+          <!-- Quick checks -->
+          <div class="check-grid" id="checkGrid"></div>
+
+          <!-- Derived Dimensions -->
+          <div class="result-section">
+            <div class="result-section-title">Derived Dimensions</div>
+            <table class="result-table" id="dimTable"></table>
+          </div>
+
+          <!-- Pressure Analysis -->
+          <div class="result-section">
+            <div class="result-section-title">Pressure Analysis</div>
+            <table class="result-table" id="pressTable"></table>
+          </div>
+
+          <!-- Wall Thickness -->
+          <div class="result-section">
+            <div class="result-section-title">Wall Thickness Check &nbsp;<span class="formula-ref">Formula 37</span></div>
+            <table class="result-table" id="wallTable"></table>
+          </div>
+
+          <!-- Buckling -->
+          <div class="result-section">
+            <div class="result-section-title">Buckling Analysis &nbsp;<span class="formula-ref" id="buckFormulaRef">Formula 51</span>&nbsp;<span class="formula-ref">Formula 53</span></div>
+            <table class="result-table" id="buckTable"></table>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Toggle helpers ────────────────────────────────────────────────────────
+function toggleHollow() {
+  const hollow = document.querySelector('input[name=ramType]:checked').value === 'hollow';
+  document.getElementById('hollowWall').style.display = hollow ? '' : 'none';
+}
+function toggleMaterial() {
+  const custom = document.getElementById('material').value === 'Custom';
+  document.getElementById('customMat').style.display = custom ? 'grid' : 'none';
+}
+
+// ── Utility ───────────────────────────────────────────────────────────────
+function f(n, d = 3) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return (+n).toFixed(d);
+}
+function badge(ok, passText = 'PASS', failText = 'FAIL') {
+  return `<span class="badge ${ok ? 'pass' : 'fail'}">${ok ? '✔ ' + passText : '✘ ' + failText}</span>`;
+}
+function rows(table, data) {
+  table.innerHTML = data.map(([l, v, s]) =>
+    `<tr><td>${l}</td><td>${v}</td>${s !== undefined ? `<td>${badge(s)}</td>` : '<td></td>'}</tr>`
+  ).join('');
+}
+
+// ── Stored results for PDF ─────────────────────────────────────────────────
+let _lastMeta = null, _lastInp = null, _lastRes = null;
+
+// ── Main calculation ───────────────────────────────────────────────────────
+function runCalc() {
+  const err = document.getElementById('errBox');
+  err.style.display = 'none';
+
+  // Read inputs
+  const cylOD   = +document.getElementById('cylOD').value;
+  const cylWT   = +document.getElementById('cylWT').value;
+  const ramOD   = +document.getElementById('ramOD').value;
+  const ramType = document.querySelector('input[name=ramType]:checked').value;
+  const ramWT   = ramType === 'hollow' ? +document.getElementById('ramWT').value : 0;
+  const travel  = +document.getElementById('travel').value;
+  const carMass = +document.getElementById('carMass').value;
+  const cap     = +document.getElementById('capacity').value;
+
+  const matKey  = document.getElementById('material').value;
+  const matDef  = HC.MATERIALS[matKey];
+  const Rp02    = matKey === 'Custom' ? +document.getElementById('customRp02').value : matDef.Rp02;
+  const Rm      = matKey === 'Custom' ? +document.getElementById('customRm').value   : matDef.Rm;
+  const matLabel = matKey === 'Custom' ? `Custom (R_p0.2=${Rp02}, R_m=${Rm})` : matDef.label;
+
+  // Validate
+  const problems = [];
+  if (!cylOD || cylOD <= 0) problems.push('Cylinder outer diameter is required.');
+  if (!cylWT || cylWT <= 0) problems.push('Cylinder wall thickness is required.');
+  if (!ramOD || ramOD <= 0) problems.push('Ram outer diameter is required.');
+  if (ramType === 'hollow' && (!ramWT || ramWT <= 0)) problems.push('Ram wall thickness is required for hollow ram.');
+  if (!travel || travel <= 0) problems.push('Cabin travel is required.');
+  if (!carMass || carMass <= 0) problems.push('Empty car mass is required.');
+  if (!cap || cap <= 0) problems.push('Rated capacity is required.');
+  if (!Rp02 || !Rm) problems.push('Material properties are required.');
+
+  const D_i = cylOD - 2 * cylWT;
+  if (D_i <= 0) problems.push('Cylinder bore (D_o − 2·e_wall) is zero or negative — check dimensions.');
+  if (ramOD >= D_i) problems.push(`Ram outer diameter (${ramOD} mm) must be less than cylinder bore (${f(D_i,1)} mm).`);
+  if (ramType === 'hollow' && ramWT >= ramOD / 2) problems.push('Ram wall thickness exceeds half the ram diameter — use Solid type instead.');
+  if (Rp02 >= Rm) problems.push('Proof stress R_p0.2 must be less than tensile strength R_m.');
+
+  if (problems.length) {
+    err.style.display = 'block';
+    err.innerHTML = '<strong>Please fix the following:</strong><ul style="margin:.5em 0 0 1.2em">' +
+      problems.map(p => `<li>${p}</li>`).join('') + '</ul>';
+    return;
+  }
+
+  const inp = { d_ram: ramOD, e_wall_ram: ramWT, D_o_cyl: cylOD, e_wall_cyl: cylWT,
+                cabin_travel: travel, P_car: carMass, Q_rated: cap, Rp02, Rm, materialLabel: matLabel };
+  const res = HC.calculate(inp);
+  _lastInp = inp;
+  _lastRes = res;
+  _lastMeta = {
+    project:  document.getElementById('projName').value,
+    projNo:   document.getElementById('projNo').value,
+    client:   document.getElementById('client').value,
+    engineer: document.getElementById('engineer').value,
+    date:     document.getElementById('projDate').value,
+  };
+
+  // ── Render results ─────────────────────────────────────────────────────
+  document.getElementById('placeholder').style.display = 'none';
+  const r = document.getElementById('results');
+  r.classList.add('visible');
+
+  // Verdict
+  const vb = document.getElementById('verdictBanner');
+  vb.className = 'verdict-banner ' + (res.all_pass ? 'safe' : 'fail');
+  vb.innerHTML = res.all_pass
+    ? '✔&ensp;Design is SAFE as per IS 17900 (Part 2): 2022'
+    : '✘&ensp;Design DOES NOT meet IS 17900 (Part 2): 2022 — see checks below';
+
+  // Quick checks
+  const checks = [
+    { label: 'Cylinder Wall',    sub: `Required: ${f(res.e_cyl_req,2)} mm — Provided: ${cylWT} mm`, ok: res.cyl_wall_ok },
+    { label: 'Ram Wall',         sub: res.solid ? 'Solid ram — N/A' : `Required: ${f(res.e_ram_req,2)} mm — Provided: ${ramWT} mm`, ok: res.ram_wall_ok },
+    { label: 'Buckling',         sub: `SF = ${f(res.SF_buck,2)} (req ≥ 2.0)`, ok: res.buck_ok },
+    { label: 'Burst Ratio',      sub: `${f(res.burst_ratio,2)} (req ≥ 2.5)`, ok: res.burst_ok },
+  ];
+  document.getElementById('checkGrid').innerHTML = checks.map(c => `
+    <div class="check-item ${c.ok ? 'pass' : 'fail'}">
+      <span class="ci-icon">${c.ok ? '✅' : '❌'}</span>
+      <span class="ci-label">${c.label}</span>
+      <span class="ci-val">${c.sub}</span>
+    </div>`).join('');
+
+  // Dimensions
+  rows(document.getElementById('dimTable'), [
+    ['Cylinder bore diameter D_i',            `${f(res.D_i,1)} mm`],
+    ['Ram inner diameter d_i',                res.solid ? 'Solid' : `${f(res.d_i_ram,1)} mm`],
+    ['Bore area A',                            `${f(res.A_bore,0)} mm²`],
+    ['Ram cross-section area A_n',            `${f(res.A_ram,1)} mm²`],
+    ['Ram second moment of area J_n',         `${f(res.J_ram/1e6,4)} × 10⁶ mm⁴`],
+    ['Ram radius of gyration i_n',            `${f(res.i_ram,2)} mm`],
+  ]);
+
+  // Pressure
+  rows(document.getElementById('pressTable'), [
+    ['Static working pressure p',             `${f(res.p_static,3)} MPa`],
+    ['Max pressure (1.4 × p)',                `${f(res.p_max,3)} MPa`],
+    ['Burst pressure — Barlow (2·R_m·e/D_i)', `${f(res.p_burst_cyl,2)} MPa`],
+    ['Burst ratio (p_burst / p_max)',          `${f(res.burst_ratio,2)} &nbsp;${res.burst_ok ? '✔ ≥ 2.5' : '✘ < 2.5'}`, res.burst_ok],
+  ]);
+
+  // Wall thickness
+  const wallRows = [
+    ['Cylinder — required e_wall  (Formula 37)', `${f(res.e_cyl_req,2)} mm`],
+    ['Cylinder — provided e_wall',                `${cylWT} mm`, res.cyl_wall_ok],
+  ];
+  if (!res.solid) {
+    wallRows.push(['Ram — required e_wall  (Formula 37)', `${f(res.e_ram_req,2)} mm`]);
+    wallRows.push(['Ram — provided e_wall',               `${ramWT} mm`, res.ram_wall_ok]);
+  } else {
+    wallRows.push(['Ram — solid section', 'Wall check N/A']);
+  }
+  rows(document.getElementById('wallTable'), wallRows);
+
+  // Buckling
+  document.getElementById('buckFormulaRef').textContent =
+    res.lambda_n >= 100 ? 'Formula 51 (Euler)' : 'Formula 52 (Johnson)';
+  rows(document.getElementById('buckTable'), [
+    ['Ram mass estimate P_t',                `${f(res.m_ram,1)} kg`],
+    ['Slenderness ratio λ_n = l / i_n',     `${f(res.lambda_n,1)}`],
+    ['Applicable formula',                   res.lambda_n >= 100 ? 'Formula 51 (Euler — λ ≥ 100)' : 'Formula 52 (Johnson — λ < 100)'],
+    ['Allowable buckling force F_s',         `${f(res.F_s_allow/1000,2)} kN`],
+    ['Actual buckling force  (Formula 53)',  `${f(res.F_s_actual/1000,2)} kN`, res.buck_ok],
+    ['Safety factor (F_s_allow / F_s_act)',  `${f(res.SF_buck,2)}  (required ≥ 2.0)`],
+  ]);
+
+  document.getElementById('pdfBtn').disabled = false;
+}
+
+function downloadPDF() {
+  if (!_lastRes) return;
+  generateHydraulicPDF(_lastMeta, _lastInp, _lastRes);
+}
+
+// Set today's date
+document.getElementById('projDate').value = new Date().toLocaleDateString('en-IN');
+</script>
+</body>
+</html>
