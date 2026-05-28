@@ -189,14 +189,24 @@ input[type=number] { font-family: 'Courier New', monospace; }
 
     <div class="sec">Elevator Parameters</div>
     <div class="grid2">
-      <label class="span2">Cabin Travel <span class="unit">mm</span>
-        <input type="number" id="travel" min="500" max="50000" step="1" placeholder="e.g. 6000" />
-      </label>
       <label>Empty Car Mass P <span class="unit">kg</span>
         <input type="number" id="carMass" min="50" max="10000" step="1" placeholder="e.g. 450" />
       </label>
       <label>Rated Capacity Q <span class="unit">kg</span>
         <input type="number" id="capacity" min="50" max="10000" step="1" placeholder="e.g. 630" />
+      </label>
+      <label class="span2">Cabin Travel <span class="unit">mm</span>
+        <input type="number" id="travel" min="500" max="50000" step="1" placeholder="e.g. 6000" />
+      </label>
+      <label class="span2">Max. Unsupported Ram Length L <span class="unit">mm</span>
+        <input type="number" id="ramLength" min="100" max="50000" step="1" placeholder="e.g. 6500 (fully extended ram length)" />
+      </label>
+      <label class="span2">Buckling End Condition k
+        <select id="kFactor" style="margin-top:4px">
+          <option value="2.0">k = 2.0 &mdash; Cantilever (fixed-free)</option>
+          <option value="1.0" selected>k = 1.0 &mdash; Pin-pin (both ends guided)</option>
+          <option value="0.7">k = 0.7 &mdash; Fixed-pin (guided-fixed)</option>
+        </select>
       </label>
     </div>
 
@@ -253,11 +263,11 @@ input[type=number] { font-family: 'Courier New', monospace; }
         <table class="rtbl"><tbody id="tPress"></tbody></table>
       </div>
       <div class="rsec">
-        <div class="rsec-title">Wall Thickness &nbsp;<span class="fref">Formula 37</span></div>
+        <div class="rsec-title">Wall Thickness &nbsp;<span class="fref">EN 81-50 Cl. 5.15</span></div>
         <table class="rtbl"><tbody id="tWall"></tbody></table>
       </div>
       <div class="rsec">
-        <div class="rsec-title">Buckling Analysis &nbsp;<span class="fref" id="buckRef">Formula 51</span> &nbsp;<span class="fref">Formula 53</span></div>
+        <div class="rsec-title">Buckling Analysis &nbsp;<span class="fref" id="buckRef">Euler</span> &nbsp;<span class="fref">EN 81-50 Cl. 5.13</span></div>
         <table class="rtbl"><tbody id="tBuck"></tbody></table>
       </div>
     </div>
@@ -324,70 +334,83 @@ var MAT = {
 
 function hcCalc(i) {
   var G = 9.81, E = 210000, RHO = 7.85e-6;
-  var FP = 2.3, SP = 1.7, OP = 1.4, BS = 2.0, EC = 1.0, ER = 0.5;
+  var SP = 1.7, OP = 1.4, E0 = 0.5;
 
   var solid = (i.eRam === 0 || i.eRam >= i.dRam / 2);
   var Di    = i.Do - 2 * i.eCyl;
   var diRam = solid ? 0 : i.dRam - 2 * i.eRam;
-  var tR    = i.trans === '2:1' ? 2 : 1;   // transmission ratio
+  var tR    = i.trans === '2:1' ? 2 : 1;
 
-  var Ab = Math.PI / 4 * Di * Di;           // cylinder bore area (for wall thickness / burst check)
-  var Ap = Math.PI / 4 * i.dRam * i.dRam;  // ram OD area — pressure area for single-acting ram type
+  // Cross-section properties
+  var Ab = Math.PI / 4 * Di * Di;
+  var Ap = Math.PI / 4 * i.dRam * i.dRam;  // ram OD area — pressure area
   var Ar = solid ? Math.PI / 4 * i.dRam * i.dRam
                  : Math.PI / 4 * (i.dRam * i.dRam - diRam * diRam);
   var Jr = solid ? Math.PI / 64 * Math.pow(i.dRam, 4)
                  : Math.PI / 64 * (Math.pow(i.dRam, 4) - Math.pow(diRam, 4));
   var ir = Math.sqrt(Jr / Ar);
 
-  // Load per cylinder and per ram
-  var loadCyl      = (i.P + i.Q) / i.nCyl;   // kg — full load per cylinder
-  var loadCylEmpty = i.P / i.nCyl;            // kg — empty car load per cylinder
-  var loadRam      = loadCyl      / tR;       // kg — axial load on ram (full)
-  var loadRamEmpty = loadCylEmpty / tR;       // kg — axial load on ram (empty)
+  // Load on ram — in 2:1 reeving the movable sheave has 2 rope strands each at T = W/nCyl
+  // so ram force = 2T = tR x (W/nCyl). This is why pressure for 2cyl/2:1 equals 1cyl/1:1.
+  var loadCyl      = (i.P + i.Q) / i.nCyl;
+  var loadCylEmpty = i.P / i.nCyl;
+  var loadRam      = loadCyl      * tR;
+  var loadRamEmpty = loadCylEmpty * tR;
 
-  // Pressure — single-acting ram type: p = F / A_ram (ram OD area, not bore area)
-  var ps     = loadRam      * G / Ap;  // MPa — full load working pressure
-  var psEmp  = loadRamEmpty * G / Ap;  // MPa — empty load (car only) pressure
-  var pm     = OP * ps;                // MPa — max pressure (1.4 × working)
-  var pb     = 2 * i.Rm * i.eCyl / Di; // MPa — burst (Barlow thin-wall)
+  // Pressure — EN 81-50 Cl. 5.10.2: P_stat = F_ram / A_ram (ram OD area)
+  var ps    = loadRam      * G / Ap;
+  var psEmp = loadRamEmpty * G / Ap;
+  var pm    = OP * ps;  // max system pressure = 1.4 x p_stat
 
-  // Wall thickness — Formula 37: e >= (2.3 × 1.7 × p_max / Rp02) × (Di/2) + e0
-  // p_max = 1.4 × p_static (IS overpressure factor must be included here)
-  var eCylReq = (FP * SP * pm / i.Rp02) * (Di / 2) + EC;
+  // Burst pressure — EN 81-50: P_burst = 2 x Rp0.2 x (e_wall - 0.5) / Di
+  var pb      = 2 * i.Rp02 * (i.eCyl - E0) / Di;
+  var bRatio  = pb / ps;  // ratio against p_static per EN 81-50
+  var burstOk = bRatio >= 2.38;
+
+  // Wall thickness — EN 81-50 Cl. 5.15: e_req = 1.7 x (p_max x Di) / (2 x Rp0.2) + 0.5
+  var eCylReq = SP * pm * Di / (2 * i.Rp02) + E0;
   var cylOk   = i.eCyl >= eCylReq;
 
   var eRamReq = null, ramOk = true;
   if (!solid) {
-    eRamReq = (FP * SP * pm / i.Rp02) * (diRam / 2) + ER;
+    eRamReq = SP * pm * diRam / (2 * i.Rp02) + E0;
     ramOk   = i.eRam >= eRamReq;
   }
 
-  // Buckling — ram stroke = travel / tR
-  var l   = i.travel / tR;
-  var lam = l / ir;
-  var mRam = Ar * l * RHO;  // kg
+  // Buckling — EN 81-50 Cl. 5.13: Euler (elastic) or Omega method (plastic)
+  var k    = i.k;
+  var L    = i.L;
+  var lam  = k * L / ir;  // slenderness with effective length
+  var lamc = Math.sqrt(Math.PI * Math.PI * E / i.Rp02);  // critical slenderness
+  var mRam = Ar * L * RHO;
+  var ramStroke = i.travel / tR;  // ram stroke (display only)
 
-  var Fsallow, bf;
-  if (lam >= 100) {
-    Fsallow = Math.PI * Math.PI * E * Jr / (BS * l * l); bf = 51;
+  var Fbuck, Fsallow, omega, bf;
+  if (lam >= lamc) {
+    // Elastic (Euler) zone
+    Fbuck   = Math.PI * Math.PI * E * Jr / Math.pow(k * L, 2);
+    omega   = null;
+    bf = 'Euler';
   } else {
-    Fsallow = (Ar / BS) * (i.Rm - (i.Rm - 210) * Math.pow(lam / 100, 2)); bf = 52;
+    // Plastic (Omega) zone
+    omega   = 1 + 0.3 * Math.pow(lam / lamc, 1.5);
+    Fbuck   = Ar * i.Rp02 / omega;
+    bf = 'Omega';
   }
-  var Fsact = OP * G * (loadRam + 0.64 * mRam);  // Formula 53
-  var SFb   = Fsallow / Fsact;
-  var buckOk = Fsact <= Fsallow;
+  Fsallow = Fbuck / 1.4;
 
-  var bRatio = pb / pm;
-  var burstOk = bRatio >= 2.5;
+  var Fsact  = G * (loadRam + 0.64 * mRam);
+  var SFb    = Fbuck / Fsact;
+  var buckOk = SFb >= 1.4;
 
   return {
     solid, Di, diRam, Ab, Ap, Ar, Jr, ir,
     loadCyl, loadCylEmpty, loadRam, loadRamEmpty,
     ps, psEmp, pm, pb, bRatio,
     eCylReq, cylOk, eRamReq, ramOk,
-    mRam, l, lam, bf, Fsallow, Fsact, SFb, buckOk,
-    burstOk, tR,
-    allPass: cylOk && ramOk && buckOk
+    mRam, L, k, lam, lamc, omega, bf, Fbuck, Fsallow, Fsact, SFb, buckOk,
+    burstOk, tR, ramStroke,
+    allPass: cylOk && ramOk && buckOk && burstOk
   };
 }
 </script>
@@ -463,9 +486,9 @@ function makePDF(meta, inp, R) {
   sec('System Configuration');
   row('Number of cylinders', inp.nCyl);
   row('Transmission', inp.trans+' ('+(inp.trans==='2:1'?'Roped indirect':'Direct acting')+')');
-  row('Ram stroke  (l = cabin travel / '+R.tR+')', fv(R.l,0)+' mm');
+  row('Ram stroke  (cabin travel / '+R.tR+')', fv(R.ramStroke,0)+' mm');
   row('Load per cylinder  ((P+Q) / '+inp.nCyl+')', fv(R.loadCyl,1)+' kg');
-  row('Axial load per ram  (after reeving)', fv(R.loadRam,1)+' kg');
+  row('Ram force  (x'+R.tR+' reeving, movable sheave with 2 rope strands)', fv(R.loadRam,1)+' kg');
 
   sec('Input Parameters');
   row('Cylinder outer diameter D_o', inp.Do+' mm');
@@ -475,50 +498,59 @@ function makePDF(meta, inp, R) {
   row('Ram type', R.solid?'Solid':'Hollow');
   if (!R.solid) row('Ram wall thickness e_wall_ram', inp.eRam+' mm');
   row('Cabin travel', inp.travel+' mm');
+  row('Max unsupported ram length L', inp.L+' mm');
+  row('End condition factor k', inp.k);
   row('Empty car mass P', inp.P+' kg');
   row('Rated load Q', inp.Q+' kg');
   row('Total load P+Q', (inp.P+inp.Q)+' kg');
   row('Material', inp.matLabel||'-');
   row('Proof stress R_p0.2', inp.Rp02+' N/mm2');
-  row('Tensile strength R_m', inp.Rm+' N/mm2');
+  if (inp.Rm) row('Tensile strength R_m (reference)', inp.Rm+' N/mm2');
 
-  sec('Pressure Analysis (per cylinder, per ram)  [1 MPa = 10 bar]');
-  row('Cylinder bore area  (reference only)', fv(R.Ab,0)+' mm2');
-  row('Ram pressure area Ap  (pi/4 x d_ram^2, ram OD)', fv(R.Ap,0)+' mm2');
-  row('Empty load pressure (car only)  p = F / Ap', fv(R.psEmp,3)+' MPa  =  '+fv(R.psEmp*10,1)+' bar');
-  row('Full load working pressure  p = F / Ap', fv(R.ps,3)+' MPa  =  '+fv(R.ps*10,1)+' bar');
-  row('Max system pressure (1.4 x p)', fv(R.pm,3)+' MPa  =  '+fv(R.pm*10,1)+' bar');
-  row('Burst pressure - Barlow  (2 x Rm x e_wall / Di)', fv(R.pb,2)+' MPa  =  '+fv(R.pb*10,1)+' bar');
-  row('Burst ratio (p_burst / p_max)', fv(R.bRatio,2)+(R.burstOk?'  [>= 2.5 OK]':'  [< 2.5 FAIL]'));
+  sec('Pressure Analysis  [EN 81-50 Cl. 5.10.2]  [1 MPa = 10 bar]');
+  row('Ram pressure area Ap = pi/4 x d_ram^2  (ram OD = '+inp.dRam+' mm)', fv(R.Ap,0)+' mm2');
+  row('Empty load pressure (car only)  p_stat = F_ram / Ap', fv(R.psEmp,3)+' MPa  =  '+fv(R.psEmp*10,1)+' bar');
+  row('Full load static pressure  p_stat = F_ram / Ap', fv(R.ps,3)+' MPa  =  '+fv(R.ps*10,1)+' bar');
+  row('Max system pressure  p_max = 1.4 x p_stat', fv(R.pm,3)+' MPa  =  '+fv(R.pm*10,1)+' bar');
+  row('Burst pressure  (EN 81-50: 2 x Rp0.2 x (e_wall - 0.5) / Di)', fv(R.pb,2)+' MPa  =  '+fv(R.pb*10,1)+' bar');
+  row('Burst ratio  p_burst / p_stat  [req >= 2.38]', fv(R.bRatio,2)+(R.burstOk?'  [>= 2.38 OK]':'  [< 2.38 FAIL]'));
   foot();
 
   // PAGE 2
   newPage();
 
-  sec('Cylinder Wall Thickness Check  [IS 17900 Formula 37]');
-  row('Formula','e_wall >= (2.3 x 1.7 x p_max / Rp02) x (Di/2) + e0  where p_max = 1.4 x p,  e0 = 1.0 mm');
+  sec('Cylinder Wall Thickness Check  [EN 81-50 Cl. 5.15]');
+  row('Formula','e_req = 1.7 x (p_max x Di) / (2 x Rp0.2) + 0.5  where p_max = 1.4 x p_stat,  e0 = 0.5 mm');
   row('Required e_wall (e_req)', fv(R.eCylReq,2)+' mm');
   rowck('Provided e_wall', inp.eCyl+' mm', R.cylOk);
 
   if (!R.solid) {
-    sec('Ram Wall Thickness Check  [IS 17900 Formula 37]');
-    row('Formula','e_wall_ram >= (2.3 x 1.7 x p_max / Rp02) x (di/2) + e0  where p_max = 1.4 x p,  e0 = 0.5 mm');
+    sec('Ram Wall Thickness Check  [EN 81-50 Cl. 5.15]');
+    row('Formula','e_req = 1.7 x (p_max x d_i_ram) / (2 x Rp0.2) + 0.5  where e0 = 0.5 mm');
     row('Required e_wall_ram (e_req)', fv(R.eRamReq,2)+' mm');
     rowck('Provided e_wall_ram', inp.eRam+' mm', R.ramOk);
   }
 
-  sec('Buckling Analysis  [IS 17900 Sec 5.13.2, Formula '+R.bf+' & 53]');
+  sec('Buckling Analysis  [EN 81-50 Cl. 5.13 — '+R.bf+' Method]');
+  row('Unsupported length L', fv(R.L,0)+' mm');
+  row('End condition factor k', fv(R.k,1));
+  row('Effective length kL', fv(R.k*R.L,0)+' mm');
   row('Ram cross-section area A_n', fv(R.Ar,1)+' mm2');
   row('Second moment of area J_n', fv(R.Jr/1e6,4)+' x 10^6 mm4');
   row('Radius of gyration i_n', fv(R.ir,2)+' mm');
-  row('Buckling length l (= '+inp.travel+' / '+R.tR+')', fv(R.l,0)+' mm');
-  row('Slenderness ratio lambda = l / i_n', fv(R.lam,1));
-  row('Formula', R.lam>=100?'Formula 51 (Euler, lambda >= 100)':'Formula 52 (Johnson parabolic, lambda < 100)');
-  row('Ram mass estimate P_t', fv(R.mRam,1)+' kg');
-  row('Critical buckling load F_crit  (no safety factor)', fv(R.Fsallow*2/1000,2)+' kN');
-  row('Allowable F_s_allow = F_crit / 2  [SF=2 per IS 17900 Formula 51/52]', fv(R.Fsallow/1000,2)+' kN');
-  rowck('Actual buckling force F_s  [Formula 53, c_m='+fv(1/R.tR,1)+']', fv(R.Fsact/1000,2)+' kN', R.buckOk);
-  row('Safety factor (F_s_allow / F_s)', fv(R.SFb,2)+'  (required >= 2.0)');
+  row('Slenderness lambda = kL / i_n', fv(R.lam,1));
+  row('Critical slenderness lambda_c = pi x sqrt(E / Rp0.2)', fv(R.lamc,1));
+  row('Zone', R.lam>=R.lamc ? 'Elastic (Euler)  lambda >= lambda_c' : 'Plastic (Omega)  lambda < lambda_c');
+  if (R.lam >= R.lamc) {
+    row('F_cr (Euler) = pi^2 x E x J / (kL)^2', fv(R.Fbuck/1000,2)+' kN');
+  } else {
+    row('Omega = 1 + 0.3 x (lambda/lambda_c)^1.5', fv(R.omega,4));
+    row('F_cr (Omega) = An x Rp0.2 / omega', fv(R.Fbuck/1000,2)+' kN');
+  }
+  row('Allowable F_s_allow = F_cr / 1.4  [SF = 1.4]', fv(R.Fsallow/1000,2)+' kN');
+  row('Ram mass estimate  (L x An x rho)', fv(R.mRam,1)+' kg');
+  rowck('Actual force Fs = g x (F_ram + 0.64 x m_ram)', fv(R.Fsact/1000,2)+' kN', R.buckOk);
+  row('Safety factor SF = F_cr / Fs  (required >= 1.4)', fv(R.SFb,2));
 
   // Summary box
   y+=18; var BH=70;
@@ -529,7 +561,7 @@ function makePDF(meta, inp, R) {
   doc.text(R.allPass?'DESIGN IS SAFE AS PER IS 17900 (PART 2): 2022'
                     :'DESIGN DOES NOT SATISFY IS 17900 (PART 2): 2022',
            PW/2,y+22,{align:'center'});
-  var chks=[{l:'Cylinder Wall',ok:R.cylOk},{l:'Ram Wall',ok:R.ramOk,sk:R.solid},{l:'Buckling',ok:R.buckOk},{l:'Burst Ratio',ok:R.burstOk}].filter(function(c){return !c.sk;});
+  var chks=[{l:'Cyl. Wall',ok:R.cylOk},{l:'Ram Wall',ok:R.ramOk,sk:R.solid},{l:'Buckling',ok:R.buckOk},{l:'Burst >= 2.38',ok:R.burstOk}].filter(function(c){return !c.sk;});
   var sp=(MR-ML)/chks.length;
   chks.forEach(function(c,i){
     var cx=ML+sp*i+sp/2, cc=c.ok?[22,163,74]:[220,38,38];
@@ -541,15 +573,16 @@ function makePDF(meta, inp, R) {
   y+=BH+14;
 
   sec('Notes');
-  ['1. Load per ram = (P+Q) / (n_cyl x tR).  Per IS 17900 Formula 53: c_m = 1/tR (0.5 for 2:1 indirect).',
-   '   In 2:1 roped indirect reeving, the car is the moveable pulley (2 rope strands) => ram carries P+Q/2.',
-   '2. F_s_allow already includes SF=2 per IS 17900 Formulae 51/52.  F_crit (no SF) = 2 x F_s_allow.',
-   '3. Buckling length l = ram stroke = cabin travel / tR, assuming pin-pin end conditions.',
-   '   For fixed-free end conditions (cantilever), use l_eff = 2 x l; verify per actual installation.',
-   '4. Fig. 10 graphical safety factor (S1 vs Dt/dr) should be verified separately by the engineer.',
-   '5. Welding seam stress-relief checks (Formulae 38-43) apply where seams are present.',
-   '6. This datasheet covers IS 17900 Formulae 37, 51-53 only.  Additional checks required for',
-   '   certification: fatigue, end caps, seal grooves, weld NDT, pipe burst, safety valve setting.',
+  ['1. Ram force = (P+Q) / n_cyl x tR.  In 2:1 reeving, the movable sheave has 2 rope strands each at',
+   '   T = W/n_cyl, so ram force = 2T = tR x W/n_cyl.  This is why 2cyl/2:1 gives same pressure as 1cyl/1:1.',
+   '2. Wall thickness per EN 81-50 Cl. 5.15: e_req = 1.7 x (p_max x Di) / (2 x Rp0.2) + 0.5 mm.',
+   '3. Burst pressure per EN 81-50: p_burst = 2 x Rp0.2 x (e - 0.5) / Di.  Criterion: p_burst >= 2.38 x p_stat.',
+   '4. Buckling per EN 81-50 Cl. 5.13.  L = max unsupported ram length; k = end condition factor.',
+   '   Elastic zone (lambda >= lambda_c): Euler formula, SF = F_cr / Fs >= 1.4.',
+   '   Plastic zone (lambda < lambda_c): Omega method (omega = 1 + 0.3 x (lam/lam_c)^1.5), SF >= 1.4.',
+   '5. Welding seam checks (EN 81-50 Cl. 5.15.2+) apply where seams are present.',
+   '6. Additional checks required for certification: fatigue, end caps, seal grooves, weld NDT,',
+   '   safety valve setting, anchorage, guide rails, and all EN 81-20 / IS 17900 items.',
    '7. This datasheet must be reviewed by a qualified engineer before use in construction.'
   ].forEach(function(n){ y+=12; doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(80,80,80); doc.text(n,ML+4,y); });
 
@@ -587,6 +620,8 @@ function runCalc() {
     var dRam = parseFloat(document.getElementById('ramOD').value);
     var eRam = STATE.ramType==='hollow' ? parseFloat(document.getElementById('ramWT').value) : 0;
     var travel = parseFloat(document.getElementById('travel').value);
+    var ramL   = parseFloat(document.getElementById('ramLength').value);
+    var kFact  = parseFloat(document.getElementById('kFactor').value);
     var P  = parseFloat(document.getElementById('carMass').value);
     var Q  = parseFloat(document.getElementById('capacity').value);
     var matKey = document.getElementById('material').value;
@@ -601,14 +636,15 @@ function runCalc() {
     if (!dRam || dRam<=0) errs.push('Ram outer diameter required.');
     if (STATE.ramType==='hollow' && (!eRam||eRam<=0)) errs.push('Ram wall thickness required for hollow ram.');
     if (!travel||travel<=0) errs.push('Cabin travel required.');
+    if (!ramL ||ramL<=0)  errs.push('Max unsupported ram length L required.');
     if (!P||P<=0) errs.push('Empty car mass required.');
     if (!Q||Q<=0) errs.push('Rated capacity required.');
-    if (!Rp02||!Rm) errs.push('Material properties required.');
+    if (!Rp02) errs.push('Material proof stress Rp0.2 required.');
     var Di = Do - 2*eCyl;
     if (Di<=0) errs.push('Cylinder bore (Do - 2×eWall) is zero or negative.');
     if (Do&&eCyl&&dRam&&dRam>=Di) errs.push('Ram diameter ('+dRam+' mm) must be less than bore ('+fv(Di,1)+' mm).');
     if (STATE.ramType==='hollow'&&eRam&&eRam>=dRam/2) errs.push('Ram wall thickness too large — use Solid type.');
-    if (Rp02&&Rm&&Rp02>=Rm) errs.push('Proof stress must be less than tensile strength.');
+    if (Rp02&&Rm&&Rp02>=Rm) errs.push('Proof stress must be less than tensile strength (informational check).');
 
     if (errs.length) {
       errEl.style.display='block';
@@ -616,8 +652,8 @@ function runCalc() {
       return;
     }
 
-    var inp = { Do:Do, eCyl:eCyl, dRam:dRam, eRam:eRam, travel:travel, P:P, Q:Q,
-                Rp02:Rp02, Rm:Rm, matLabel:matLabel,
+    var inp = { Do:Do, eCyl:eCyl, dRam:dRam, eRam:eRam, travel:travel, L:ramL, k:kFact,
+                P:P, Q:Q, Rp02:Rp02, Rm:Rm, matLabel:matLabel,
                 nCyl:STATE.nCyl, trans:STATE.trans };
     var res = hcCalc(inp);
     _inp=inp; _res=res;
@@ -643,7 +679,7 @@ function runCalc() {
     document.getElementById('pills').innerHTML=
       '<span class="pill">'+STATE.nCyl+' Cylinder'+(STATE.nCyl>1?'s':'')+'</span>'+
       '<span class="pill">Transmission '+STATE.trans+'</span>'+
-      '<span class="pill">Ram stroke: '+fv(res.l,0)+' mm</span>'+
+      '<span class="pill">Ram stroke: '+fv(res.ramStroke,0)+' mm</span>'+
       '<span class="pill">Load/ram: '+fv(res.loadRam,0)+' kg</span>'+
       '<span class="pill">Full load: '+fv(res.ps,2)+' MPa / '+fv(res.ps*10,1)+' bar</span>';
 
@@ -651,8 +687,8 @@ function runCalc() {
     document.getElementById('chkGrid').innerHTML=[
       {lbl:'Cylinder Wall', sub:'Req: '+fv(res.eCylReq,2)+' mm &mdash; Got: '+eCyl+' mm', ok:res.cylOk},
       {lbl:'Ram Wall',      sub:res.solid?'Solid &mdash; N/A':'Req: '+fv(res.eRamReq,2)+' mm &mdash; Got: '+eRam+' mm', ok:res.ramOk},
-      {lbl:'Buckling',      sub:'SF = '+fv(res.SFb,2)+' (req &ge; 2.0)', ok:res.buckOk},
-      {lbl:'Burst Ratio',   sub:fv(res.bRatio,2)+' (req &ge; 2.5)', ok:res.burstOk},
+      {lbl:'Buckling',      sub:'SF = '+fv(res.SFb,2)+' (req &ge; 1.4)', ok:res.buckOk},
+      {lbl:'Burst Ratio',   sub:fv(res.bRatio,2)+' (req &ge; 2.38)', ok:res.burstOk},
     ].map(function(c){
       return '<div class="chk '+(c.ok?'pass':'fail')+'">'+
              '<div class="ci-icon">'+(c.ok?'&#9989;':'&#10060;')+'</div>'+
@@ -674,22 +710,24 @@ function runCalc() {
     // Pressure table (1 MPa = 10 bar)
     tbl('tPress',[
       ['Total load P + Q', (P+Q)+' kg'],
-      ['Load per cylinder (&divide;'+STATE.nCyl+')', fv(res.loadCyl,1)+' kg  |  empty: '+fv(res.loadCylEmpty,1)+' kg'],
-      ['Axial load per ram (&divide;'+tR+')', fv(res.loadRam,1)+' kg  |  empty: '+fv(res.loadRamEmpty,1)+' kg'],
-      ['Pressure area A<sub>p</sub> = &pi;/4 &times; d<sub>ram</sub>&sup2;  (ram OD = '+dRam+' mm)', fv(res.Ap,0)+' mm&sup2;'],
+      ['Load per cylinder (P+Q &divide; '+STATE.nCyl+')', fv(res.loadCyl,1)+' kg  |  empty: '+fv(res.loadCylEmpty,1)+' kg'],
+      ['Ram force (&times;'+tR+' reeving &mdash; 2 rope strands on sheave)', fv(res.loadRam,1)+' kg  |  empty: '+fv(res.loadRamEmpty,1)+' kg'],
+      ['Ram pressure area A<sub>p</sub> = &pi;/4 &times; d<sub>ram</sub>&sup2;  ('+dRam+' mm OD)', fv(res.Ap,0)+' mm&sup2;'],
       ['<strong>Empty load pressure</strong> (car only)', fv(res.psEmp,3)+' MPa &nbsp;=&nbsp; <strong>'+fv(res.psEmp*10,1)+' bar</strong>'],
-      ['<strong>Full load working pressure</strong> p', fv(res.ps,3)+' MPa &nbsp;=&nbsp; <strong>'+fv(res.ps*10,1)+' bar</strong>'],
-      ['<strong>Max system pressure</strong> (1.4&times;p)', fv(res.pm,3)+' MPa &nbsp;=&nbsp; <strong>'+fv(res.pm*10,1)+' bar</strong>'],
-      ['Burst pressure &mdash; Barlow (cyl wall)', fv(res.pb,2)+' MPa &nbsp;=&nbsp; '+fv(res.pb*10,1)+' bar'],
-      ['Burst ratio p<sub>burst</sub>/p<sub>max</sub>', fv(res.bRatio,2)+(res.burstOk?' &#9989; &ge;2.5':' &#10060; &lt;2.5'), res.burstOk],
+      ['<strong>Full load static pressure</strong> p<sub>stat</sub>', fv(res.ps,3)+' MPa &nbsp;=&nbsp; <strong>'+fv(res.ps*10,1)+' bar</strong>'],
+      ['<strong>Max system pressure</strong> p<sub>max</sub> = 1.4 &times; p<sub>stat</sub>', fv(res.pm,3)+' MPa &nbsp;=&nbsp; <strong>'+fv(res.pm*10,1)+' bar</strong>'],
+      ['Burst pressure (EN 81-50: 2&times;R<sub>p0.2</sub>&times;(e&minus;0.5)/D<sub>i</sub>)', fv(res.pb,2)+' MPa &nbsp;=&nbsp; '+fv(res.pb*10,1)+' bar'],
+      ['Burst ratio p<sub>burst</sub> / p<sub>stat</sub>', fv(res.bRatio,2)+(res.burstOk?' &#9989; &ge;2.38':' &#10060; &lt;2.38'), res.burstOk],
     ]);
 
     // Wall thickness
     var wr=[
+      ['Formula: e<sub>req</sub> = 1.7 &times; (p<sub>max</sub> &times; D<sub>i</sub>) / (2 &times; R<sub>p0.2</sub>) + 0.5', ''],
       ['Cylinder &mdash; required e<sub>wall</sub>', fv(res.eCylReq,2)+' mm'],
       ['Cylinder &mdash; provided e<sub>wall</sub>', eCyl+' mm', res.cylOk],
     ];
     if(!res.solid){
+      wr.push(['Formula: e<sub>req</sub> = 1.7 &times; (p<sub>max</sub> &times; d<sub>i,ram</sub>) / (2 &times; R<sub>p0.2</sub>) + 0.5', '']);
       wr.push(['Ram &mdash; required e<sub>wall</sub>', fv(res.eRamReq,2)+' mm']);
       wr.push(['Ram &mdash; provided e<sub>wall</sub>', eRam+' mm', res.ramOk]);
     } else {
@@ -698,17 +736,29 @@ function runCalc() {
     tbl('tWall',wr);
 
     // Buckling
-    document.getElementById('buckRef').textContent=res.lam>=100?'Formula 51 (Euler)':'Formula 52 (Johnson)';
-    tbl('tBuck',[
-      ['Ram stroke / buckling length l', fv(res.l,0)+' mm (= '+travel+' / '+tR+')'],
-      ['Ram mass estimate P<sub>t</sub>', fv(res.mRam,1)+' kg'],
-      ['Slenderness ratio &lambda;', fv(res.lam,1)],
-      ['Formula applied', res.lam>=100?'Formula 51 (Euler, &lambda;&ge;100)':'Formula 52 (Johnson, &lambda;&lt;100)'],
-      ['Critical load F<sub>crit</sub> (before SF)', fv(res.Fsallow*2/1000,2)+' kN'],
-      ['Allowable F<sub>s,allow</sub> = F<sub>crit</sub> / 2  <small>(SF=2 per IS 17900)</small>', fv(res.Fsallow/1000,2)+' kN'],
-      ['Actual F<sub>s</sub> (Formula 53, c<sub>m</sub>='+fv(1/res.tR,1)+')', fv(res.Fsact/1000,2)+' kN', res.buckOk],
-      ['Safety factor (F<sub>s,allow</sub> / F<sub>s</sub>)', fv(res.SFb,2)+'  (req &ge; 2.0)'],
-    ]);
+    document.getElementById('buckRef').textContent = res.lam>=res.lamc ? 'Euler (elastic)' : 'Omega (plastic)';
+    var buckRows = [
+      ['Unsupported length L (user input)', fv(res.L,0)+' mm'],
+      ['End condition factor k', fv(res.k,1)],
+      ['Effective length k &times; L', fv(res.k*res.L,0)+' mm'],
+      ['Ram cross-section area A<sub>n</sub>', fv(res.Ar,1)+' mm&sup2;'],
+      ['Second moment of area J<sub>n</sub>', fv(res.Jr/1e6,4)+' &times;10&sup6; mm&sup4;'],
+      ['Radius of gyration i<sub>n</sub>', fv(res.ir,2)+' mm'],
+      ['Slenderness &lambda; = kL / i<sub>n</sub>', fv(res.lam,1)],
+      ['Critical slenderness &lambda;<sub>c</sub> = &pi; &radic;(E / R<sub>p0.2</sub>)', fv(res.lamc,1)],
+      ['Zone', res.lam>=res.lamc ? 'Elastic (Euler) &mdash; &lambda; &ge; &lambda;<sub>c</sub>' : 'Plastic (Omega) &mdash; &lambda; &lt; &lambda;<sub>c</sub>'],
+    ];
+    if (res.lam >= res.lamc) {
+      buckRows.push(['F<sub>cr</sub> (Euler) = &pi;&sup2; &times; E &times; J / (kL)&sup2;', fv(res.Fbuck/1000,2)+' kN']);
+    } else {
+      buckRows.push(['&omega; = 1 + 0.3 &times; (&lambda;/&lambda;<sub>c</sub>)<sup>1.5</sup>', fv(res.omega,4)]);
+      buckRows.push(['F<sub>cr</sub> (Omega) = A<sub>n</sub> &times; R<sub>p0.2</sub> / &omega;', fv(res.Fbuck/1000,2)+' kN']);
+    }
+    buckRows.push(['F<sub>s,allow</sub> = F<sub>cr</sub> / 1.4  (required SF = 1.4)', fv(res.Fsallow/1000,2)+' kN']);
+    buckRows.push(['Ram mass estimate (L &times; A<sub>n</sub> &times; &rho;)', fv(res.mRam,1)+' kg']);
+    buckRows.push(['Actual load F<sub>s</sub> = g &times; (F<sub>ram</sub> + 0.64 &times; m<sub>ram</sub>)', fv(res.Fsact/1000,2)+' kN', res.buckOk]);
+    buckRows.push(['Safety factor SF = F<sub>cr</sub> / F<sub>s</sub>', fv(res.SFb,2)+'  (req &ge; 1.4)']);
+    tbl('tBuck', buckRows);
 
     document.getElementById('pdfBtn').disabled=false;
 
