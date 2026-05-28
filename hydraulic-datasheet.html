@@ -277,21 +277,32 @@ input[type=number] { font-family: 'Courier New', monospace; }
 <script>
 var STATE = { nCyl: 1, trans: '1:1', ramType: 'solid' };
 
+function _afterToggle() {
+  // If results are already visible, recalculate immediately so the
+  // user always sees up-to-date numbers when they flip a toggle.
+  if (document.getElementById('results').style.display !== 'none') {
+    runCalc();
+  }
+}
+
 function setCyl(n) {
   STATE.nCyl = n;
   document.getElementById('togCyl1').className = 'tog' + (n === 1 ? ' on' : '');
   document.getElementById('togCyl2').className = 'tog' + (n === 2 ? ' on' : '');
+  _afterToggle();
 }
 function setTrans(t) {
   STATE.trans = t;
   document.getElementById('togT11').className = 'tog' + (t === '1:1' ? ' on' : '');
   document.getElementById('togT21').className = 'tog' + (t === '2:1' ? ' on' : '');
+  _afterToggle();
 }
 function setRam(t) {
   STATE.ramType = t;
   document.getElementById('togSolid').className  = 'tog' + (t === 'solid'  ? ' on' : '');
   document.getElementById('togHollow').className = 'tog' + (t === 'hollow' ? ' on' : '');
   document.getElementById('hollowRow').style.display = t === 'hollow' ? 'block' : 'none';
+  _afterToggle();
 }
 function toggleMat() {
   var c = document.getElementById('material').value === 'Custom';
