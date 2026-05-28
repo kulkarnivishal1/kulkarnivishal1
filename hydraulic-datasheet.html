@@ -153,14 +153,18 @@ input[type=number] { font-family: 'Courier New', monospace; }
       <div class="grid2">
         <div class="tog-grp">No. of Cylinders
           <div class="toggle-row" style="margin-top:4px">
-            <button type="button" class="tog on"  id="togCyl1" onclick="setCyl(1)">1 Cylinder</button>
-            <button type="button" class="tog"     id="togCyl2" onclick="setCyl(2)">2 Cylinders</button>
+            <input type="radio" id="rcyl1" name="grpCyl" style="display:none" checked onchange="setCyl(1)">
+            <label for="rcyl1" class="tog on" id="togCyl1">1 Cylinder</label>
+            <input type="radio" id="rcyl2" name="grpCyl" style="display:none" onchange="setCyl(2)">
+            <label for="rcyl2" class="tog" id="togCyl2">2 Cylinders</label>
           </div>
         </div>
         <div class="tog-grp">Transmission Type
           <div class="toggle-row" style="margin-top:4px">
-            <button type="button" class="tog on" id="togT11" onclick="setTrans('1:1')">1 : 1</button>
-            <button type="button" class="tog"    id="togT21" onclick="setTrans('2:1')">2 : 1</button>
+            <input type="radio" id="rtrans11" name="grpTrans" style="display:none" checked onchange="setTrans('1:1')">
+            <label for="rtrans11" class="tog on" id="togT11">1 : 1</label>
+            <input type="radio" id="rtrans21" name="grpTrans" style="display:none" onchange="setTrans('2:1')">
+            <label for="rtrans21" class="tog" id="togT21">2 : 1</label>
           </div>
         </div>
       </div>
@@ -183,8 +187,10 @@ input[type=number] { font-family: 'Courier New', monospace; }
       </label>
       <div class="tog-grp">Ram Type
         <div class="toggle-row" style="margin-top:4px">
-          <button type="button" class="tog on" id="togSolid"  onclick="setRam('solid')">Solid</button>
-          <button type="button" class="tog"    id="togHollow" onclick="setRam('hollow')">Hollow</button>
+          <input type="radio" id="rsolid" name="grpRam" style="display:none" checked onchange="setRam('solid')">
+          <label for="rsolid" class="tog on" id="togSolid">Solid</label>
+          <input type="radio" id="rhollow" name="grpRam" style="display:none" onchange="setRam('hollow')">
+          <label for="rhollow" class="tog" id="togHollow">Hollow</label>
         </div>
       </div>
       <label class="span2" id="hollowRow" style="display:none">
