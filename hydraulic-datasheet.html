@@ -65,6 +65,7 @@ input[type=number] { font-family: 'Courier New', monospace; }
 .tog:hover { border-color: var(--blue-mid); color: var(--blue); background: var(--blue-lt); }
 .tog.on { border-color: var(--blue); background: var(--blue); color: #fff; }
 .tog:focus { outline: none; }
+.tog-grp { display: flex; flex-direction: column; gap: 4px; font-size: .8rem; font-weight: 600; color: #495057; }
 
 .config-band { background: linear-gradient(135deg, #eff6ff, #e0e7ff); border: 1.5px solid #c7d2fe; border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
 .config-band .sec { color: #3730a3; border-bottom-color: #c7d2fe; }
@@ -150,18 +151,18 @@ input[type=number] { font-family: 'Courier New', monospace; }
     <div class="config-band">
       <div class="sec">System Configuration</div>
       <div class="grid2">
-        <label>No. of Cylinders
+        <div class="tog-grp">No. of Cylinders
           <div class="toggle-row" style="margin-top:4px">
             <button type="button" class="tog on"  id="togCyl1" onclick="setCyl(1)">1 Cylinder</button>
             <button type="button" class="tog"     id="togCyl2" onclick="setCyl(2)">2 Cylinders</button>
           </div>
-        </label>
-        <label>Transmission Type
+        </div>
+        <div class="tog-grp">Transmission Type
           <div class="toggle-row" style="margin-top:4px">
             <button type="button" class="tog on" id="togT11" onclick="setTrans('1:1')">1 : 1</button>
             <button type="button" class="tog"    id="togT21" onclick="setTrans('2:1')">2 : 1</button>
           </div>
-        </label>
+        </div>
       </div>
     </div>
 
@@ -180,12 +181,12 @@ input[type=number] { font-family: 'Courier New', monospace; }
       <label>Outer Diameter d <span class="unit">mm</span>
         <input type="number" id="ramOD" min="20" max="800" step="1" placeholder="e.g. 100" />
       </label>
-      <label>Ram Type
+      <div class="tog-grp">Ram Type
         <div class="toggle-row" style="margin-top:4px">
           <button type="button" class="tog on" id="togSolid"  onclick="setRam('solid')">Solid</button>
           <button type="button" class="tog"    id="togHollow" onclick="setRam('hollow')">Hollow</button>
         </div>
-      </label>
+      </div>
       <label class="span2" id="hollowRow" style="display:none">
         Ram Wall Thickness e<sub>ram</sub> <span class="unit">mm</span>
         <input type="number" id="ramWT" min="1" max="100" step="0.5" placeholder="e.g. 10" />
