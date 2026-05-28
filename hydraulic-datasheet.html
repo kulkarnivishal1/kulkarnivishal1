@@ -51,15 +51,20 @@ input[type=text], input[type=number], select {
 input:focus, select:focus { outline: none; border-color: var(--blue-mid); box-shadow: 0 0 0 3px rgba(26,86,201,.15); background: #fff; }
 input[type=number] { font-family: 'Courier New', monospace; }
 
-/* ── Toggle buttons (pure CSS + onclick, no radio inputs) ── */
+/* ── Toggle buttons — use <button> for reliable mobile touch ── */
 .toggle-row { display: flex; gap: 8px; }
 .tog {
   flex: 1; cursor: pointer; padding: 8px 10px; border: 2px solid var(--gray3);
   border-radius: 6px; text-align: center; font-size: .82rem; font-weight: 600;
   color: #6c757d; background: var(--gray1); transition: all .15s; user-select: none;
+  /* button element resets */
+  appearance: none; -webkit-appearance: none;
+  font-family: inherit; line-height: normal;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
 }
 .tog:hover { border-color: var(--blue-mid); color: var(--blue); background: var(--blue-lt); }
 .tog.on { border-color: var(--blue); background: var(--blue); color: #fff; }
+.tog:focus { outline: none; }
 
 .config-band { background: linear-gradient(135deg, #eff6ff, #e0e7ff); border: 1.5px solid #c7d2fe; border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
 .config-band .sec { color: #3730a3; border-bottom-color: #c7d2fe; }
@@ -147,14 +152,14 @@ input[type=number] { font-family: 'Courier New', monospace; }
       <div class="grid2">
         <label>No. of Cylinders
           <div class="toggle-row" style="margin-top:4px">
-            <div class="tog on"  id="togCyl1" onclick="setCyl(1)">1 Cylinder</div>
-            <div class="tog"     id="togCyl2" onclick="setCyl(2)">2 Cylinders</div>
+            <button type="button" class="tog on"  id="togCyl1" onclick="setCyl(1)">1 Cylinder</button>
+            <button type="button" class="tog"     id="togCyl2" onclick="setCyl(2)">2 Cylinders</button>
           </div>
         </label>
         <label>Transmission Type
           <div class="toggle-row" style="margin-top:4px">
-            <div class="tog on" id="togT11" onclick="setTrans('1:1')">1 : 1</div>
-            <div class="tog"    id="togT21" onclick="setTrans('2:1')">2 : 1</div>
+            <button type="button" class="tog on" id="togT11" onclick="setTrans('1:1')">1 : 1</button>
+            <button type="button" class="tog"    id="togT21" onclick="setTrans('2:1')">2 : 1</button>
           </div>
         </label>
       </div>
@@ -177,8 +182,8 @@ input[type=number] { font-family: 'Courier New', monospace; }
       </label>
       <label>Ram Type
         <div class="toggle-row" style="margin-top:4px">
-          <div class="tog on" id="togSolid"  onclick="setRam('solid')">Solid</div>
-          <div class="tog"    id="togHollow" onclick="setRam('hollow')">Hollow</div>
+          <button type="button" class="tog on" id="togSolid"  onclick="setRam('solid')">Solid</button>
+          <button type="button" class="tog"    id="togHollow" onclick="setRam('hollow')">Hollow</button>
         </div>
       </label>
       <label class="span2" id="hollowRow" style="display:none">
