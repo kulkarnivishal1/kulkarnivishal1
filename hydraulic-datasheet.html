@@ -350,13 +350,14 @@ function hcCalc(i) {
   var pm     = OP * ps;                // MPa — max pressure (1.4 × working)
   var pb     = 2 * i.Rm * i.eCyl / Di; // MPa — burst (Barlow thin-wall)
 
-  // Wall thickness — Formula 37
-  var eCylReq = (FP * SP * ps / i.Rp02) * (Di / 2) + EC;
+  // Wall thickness — Formula 37: e >= (2.3 × 1.7 × p_max / Rp02) × (Di/2) + e0
+  // p_max = 1.4 × p_static (IS overpressure factor must be included here)
+  var eCylReq = (FP * SP * pm / i.Rp02) * (Di / 2) + EC;
   var cylOk   = i.eCyl >= eCylReq;
 
   var eRamReq = null, ramOk = true;
   if (!solid) {
-    eRamReq = (FP * SP * ps / i.Rp02) * (diRam / 2) + ER;
+    eRamReq = (FP * SP * pm / i.Rp02) * (diRam / 2) + ER;
     ramOk   = i.eRam >= eRamReq;
   }
 
@@ -493,13 +494,13 @@ function makePDF(meta, inp, R) {
   newPage();
 
   sec('Cylinder Wall Thickness Check  [IS 17900 Formula 37]');
-  row('Formula','e_wall >= (2.3 x 1.7 x p / Rp02) x (Di/2) + e0  where e0 = 1.0 mm');
+  row('Formula','e_wall >= (2.3 x 1.7 x p_max / Rp02) x (Di/2) + e0  where p_max = 1.4 x p,  e0 = 1.0 mm');
   row('Required e_wall (e_req)', fv(R.eCylReq,2)+' mm');
   rowck('Provided e_wall', inp.eCyl+' mm', R.cylOk);
 
   if (!R.solid) {
     sec('Ram Wall Thickness Check  [IS 17900 Formula 37]');
-    row('Formula','e_wall_ram >= (2.3 x 1.7 x p / Rp02) x (di/2) + e0  where e0 = 0.5 mm');
+    row('Formula','e_wall_ram >= (2.3 x 1.7 x p_max / Rp02) x (di/2) + e0  where p_max = 1.4 x p,  e0 = 0.5 mm');
     row('Required e_wall_ram (e_req)', fv(R.eRamReq,2)+' mm');
     rowck('Provided e_wall_ram', inp.eRam+' mm', R.ramOk);
   }
