@@ -9,18 +9,10 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --blue:     #0b3d91;
-    --blue-lt:  #e8f0fe;
-    --blue-mid: #1a56c9;
-    --green:    #16a34a;
-    --red:      #dc2626;
-    --orange:   #ea580c;
-    --gray1:    #f8f9fa;
-    --gray2:    #e9ecef;
-    --gray3:    #ced4da;
-    --text:     #212529;
-    --muted:    #6c757d;
-    --radius:   8px;
+    --blue:    #0b3d91; --blue-lt: #e8f0fe; --blue-mid: #1a56c9;
+    --green:   #16a34a; --red: #dc2626;
+    --gray1:   #f8f9fa; --gray2: #e9ecef; --gray3: #ced4da;
+    --text:    #212529; --muted: #6c757d; --radius: 8px;
   }
   body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f4f8; color: var(--text); min-height: 100vh; }
 
@@ -40,37 +32,35 @@
   .brand p  { font-size: 0.72rem; opacity: .75; }
   .header-std {
     background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25);
-    border-radius: 6px; padding: 4px 10px; font-size: 0.72rem;
-    font-weight: 600; letter-spacing: .03em;
+    border-radius: 6px; padding: 4px 10px; font-size: 0.72rem; font-weight: 600; letter-spacing: .03em;
+    text-align: right;
   }
+  .page-footer {
+    background: var(--blue); color: rgba(255,255,255,.75); text-align: center;
+    padding: 10px 24px; font-size: .72rem; margin-top: 12px;
+  }
+  .page-footer strong { color: #fff; font-style: italic; }
 
   .container {
-    max-width: 1280px; margin: 0 auto; padding: 24px 20px;
-    display: grid; grid-template-columns: 420px 1fr; gap: 20px; align-items: start;
+    max-width: 1300px; margin: 0 auto; padding: 24px 20px;
+    display: grid; grid-template-columns: 430px 1fr; gap: 20px; align-items: start;
   }
-  @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
+  @media (max-width: 920px) { .container { grid-template-columns: 1fr; } }
 
   .card { background: #fff; border-radius: var(--radius); box-shadow: 0 1px 4px rgba(0,0,0,.08), 0 2px 12px rgba(0,0,0,.05); overflow: hidden; }
-  .card-header {
-    background: var(--blue); color: #fff; padding: 12px 18px;
-    font-weight: 700; font-size: .9rem; display: flex; align-items: center; gap: 8px;
-  }
+  .card-header { background: var(--blue); color: #fff; padding: 12px 18px; font-weight: 700; font-size: .9rem; display: flex; align-items: center; gap: 8px; }
   .card-body { padding: 16px 18px; }
 
   .section-label {
-    font-size: .72rem; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .06em; color: var(--blue); margin: 14px 0 8px;
-    padding-bottom: 4px; border-bottom: 2px solid var(--blue-lt);
+    font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--blue); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 2px solid var(--blue-lt);
   }
   .section-label:first-child { margin-top: 0; }
 
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .span2 { grid-column: span 2; }
 
-  label {
-    display: flex; flex-direction: column; gap: 4px;
-    font-size: .8rem; font-weight: 600; color: #495057;
-  }
+  label { display: flex; flex-direction: column; gap: 4px; font-size: .8rem; font-weight: 600; color: #495057; }
   label .unit { font-size: .7rem; font-weight: 400; color: var(--muted); margin-left: 4px; }
 
   input[type=text], input[type=number], select {
@@ -78,26 +68,31 @@
     font-size: .85rem; font-family: inherit; width: 100%;
     transition: border-color .15s, box-shadow .15s; background: var(--gray1); color: var(--text);
   }
-  input:focus, select:focus {
-    outline: none; border-color: var(--blue-mid);
-    box-shadow: 0 0 0 3px rgba(26,86,201,.15); background: #fff;
-  }
+  input:focus, select:focus { outline: none; border-color: var(--blue-mid); box-shadow: 0 0 0 3px rgba(26,86,201,.15); background: #fff; }
   input[type=number] { font-family: 'Courier New', monospace; }
 
-  .radio-group { display: flex; gap: 10px; margin-top: 2px; }
+  /* Radio toggle buttons */
+  .radio-group { display: flex; gap: 8px; margin-top: 2px; }
   .radio-opt {
-    flex: 1; cursor: pointer; padding: 7px 12px; border: 1.5px solid var(--gray3);
+    flex: 1; cursor: pointer; padding: 7px 10px; border: 1.5px solid var(--gray3);
     border-radius: 6px; display: flex; align-items: center; justify-content: center;
-    gap: 6px; font-size: .8rem; font-weight: 600; color: #495057;
-    transition: all .15s; user-select: none;
+    gap: 6px; font-size: .82rem; font-weight: 600; color: #495057;
+    transition: all .15s; user-select: none; text-align: center;
   }
   .radio-opt.active { background: var(--blue-lt); border-color: var(--blue-mid); color: var(--blue); }
   .radio-opt input { display: none; }
 
+  /* System config highlight band */
+  .config-band {
+    background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%);
+    border: 1.5px solid #c7d2fe; border-radius: 8px; padding: 12px 14px; margin: 10px 0;
+  }
+  .config-band .section-label { margin-top: 0; color: #3730a3; border-bottom-color: #c7d2fe; }
+
   .btn-calc {
     width: 100%; margin-top: 14px; padding: 13px; background: var(--blue);
-    color: #fff; border: none; border-radius: 8px; font-size: .95rem;
-    font-weight: 700; cursor: pointer; transition: background .15s, transform .1s;
+    color: #fff; border: none; border-radius: 8px; font-size: .95rem; font-weight: 700;
+    cursor: pointer; transition: background .15s, transform .1s;
     display: flex; align-items: center; justify-content: center; gap: 8px;
   }
   .btn-calc:hover  { background: var(--blue-mid); }
@@ -119,7 +114,6 @@
 
   /* Results */
   #results { display: none; }
-  #results.visible { display: block; }
 
   .verdict-banner {
     border-radius: var(--radius); padding: 14px 18px; margin-bottom: 14px;
@@ -127,6 +121,16 @@
   }
   .verdict-banner.safe { background: #f0fdf4; color: var(--green); border: 2px solid var(--green); }
   .verdict-banner.fail { background: #fef2f2; color: var(--red);   border: 2px solid var(--red); }
+
+  .sys-summary {
+    background: #f8faff; border: 1px solid #dbeafe; border-radius: 8px;
+    padding: 10px 14px; margin-bottom: 14px;
+    display: flex; flex-wrap: wrap; gap: 14px; font-size: .8rem;
+  }
+  .sys-pill {
+    background: var(--blue-lt); color: var(--blue); border-radius: 20px;
+    padding: 3px 11px; font-weight: 700; font-size: .78rem;
+  }
 
   .check-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
   .check-item { border-radius: 8px; padding: 11px 13px; border: 1.5px solid; display: flex; flex-direction: column; gap: 3px; }
@@ -143,10 +147,7 @@
     border-radius: 5px 5px 0 0; border-left: 3px solid var(--blue);
     display: flex; align-items: center; gap: 8px;
   }
-  .formula-ref {
-    font-size: .68rem; color: var(--blue); background: rgba(11,61,145,.12);
-    padding: 1px 6px; border-radius: 4px; font-weight: 700;
-  }
+  .formula-ref { font-size: .68rem; color: var(--blue); background: rgba(11,61,145,.12); padding: 1px 6px; border-radius: 4px; font-weight: 700; }
   .result-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
   .result-table td { padding: 6px 10px; border-bottom: 1px solid var(--gray2); vertical-align: middle; }
   .result-table td:first-child { color: var(--muted); width: 56%; }
@@ -154,10 +155,7 @@
   .result-table tr:last-child td { border-bottom: none; }
   .result-table tr:nth-child(even) { background: #fafafa; }
 
-  .badge {
-    display: inline-flex; align-items: center; gap: 3px; padding: 2px 9px;
-    border-radius: 20px; font-size: .73rem; font-weight: 700; font-family: inherit;
-  }
+  .badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 9px; border-radius: 20px; font-size: .73rem; font-weight: 700; font-family: inherit; }
   .badge.pass { background: #dcfce7; color: var(--green); }
   .badge.fail { background: #fee2e2; color: var(--red); }
 
@@ -172,8 +170,8 @@
   <div class="brand">
     <div class="logo">P</div>
     <div>
-      <h1>Portal Engineering Private Limited</h1>
-      <p>Hydraulic Cylinder Design Datasheet</p>
+      <h1>Portal Engineering Limited</h1>
+      <p>Your Engineering Excellence Partners &mdash; Hydraulic Cylinder Datasheet</p>
     </div>
   </div>
   <div class="header-std">IS 17900 (Part 2) : 2022</div>
@@ -181,7 +179,7 @@
 
 <div class="container">
 
-  <!-- LEFT: Inputs -->
+  <!-- ═══ LEFT: Inputs ═══ -->
   <div>
     <div class="card">
       <div class="card-header">&#9881; Design Inputs</div>
@@ -204,6 +202,33 @@
           <label>Date
             <input type="text" id="projDate" />
           </label>
+        </div>
+
+        <!-- ── System Configuration (highlighted) ── -->
+        <div class="config-band">
+          <div class="section-label">System Configuration</div>
+          <div class="form-grid">
+            <label>No. of Cylinders
+              <div class="radio-group">
+                <label class="radio-opt active" id="opt1cyl">
+                  <input type="radio" name="nCyl" value="1" checked> 1 Cylinder
+                </label>
+                <label class="radio-opt" id="opt2cyl">
+                  <input type="radio" name="nCyl" value="2"> 2 Cylinders
+                </label>
+              </div>
+            </label>
+            <label>Transmission
+              <div class="radio-group">
+                <label class="radio-opt active" id="opt11">
+                  <input type="radio" name="trans" value="1:1" checked> 1 : 1
+                </label>
+                <label class="radio-opt" id="opt21">
+                  <input type="radio" name="trans" value="2:1"> 2 : 1
+                </label>
+              </div>
+            </label>
+          </div>
         </div>
 
         <div class="section-label">Cylinder</div>
@@ -279,7 +304,7 @@
     </div>
   </div>
 
-  <!-- RIGHT: Results -->
+  <!-- ═══ RIGHT: Results ═══ -->
   <div>
     <div class="card">
       <div class="card-header">&#128203; Design Results &mdash; IS 17900 (Part 2): 2022</div>
@@ -292,14 +317,18 @@
 
         <div id="results">
           <div class="verdict-banner" id="verdictBanner"></div>
+
+          <!-- System config summary pills -->
+          <div class="sys-summary" id="sysSummary"></div>
+
           <div class="check-grid" id="checkGrid"></div>
 
           <div class="result-section">
-            <div class="result-section-title">Derived Dimensions</div>
+            <div class="result-section-title">Derived Dimensions &amp; Cross-Sections</div>
             <table class="result-table"><tbody id="dimTable"></tbody></table>
           </div>
           <div class="result-section">
-            <div class="result-section-title">Pressure Analysis</div>
+            <div class="result-section-title">Pressure Analysis <span style="font-size:.7rem;font-weight:400;color:var(--muted)">(per cylinder / per ram)</span></div>
             <table class="result-table"><tbody id="pressTable"></tbody></table>
           </div>
           <div class="result-section">
@@ -321,258 +350,264 @@
   </div>
 </div>
 
-<!-- ═══════════════════ IS 17900 CALCULATION ENGINE ═══════════════════ -->
+<div class="page-footer">
+  Portal Engineering Limited &nbsp;&bull;&nbsp; Your Engineering Excellence Partners &nbsp;&bull;&nbsp;
+  <strong>Pistons are Diamond Polished &mdash; Ra Value &lt; 0.2 Microns</strong>
+</div>
+
+<!-- ═══════════════ IS 17900 CALCULATION ENGINE ═══════════════ -->
 <script>
-const MATERIALS = {
-  'IS2062-E250': { label: 'IS 2062 E250 (Fe410)',  Rp02: 250, Rm: 410 },
-  'IS2062-E350': { label: 'IS 2062 E350 (Fe490)',  Rp02: 350, Rm: 490 },
-  'IS2062-E410': { label: 'IS 2062 E410 (Fe540)',  Rp02: 410, Rm: 540 },
-  'Custom':      { label: 'Custom',                 Rp02: null, Rm: null },
+var MATERIALS = {
+  'IS2062-E250': { label: 'IS 2062 E250 (Fe410)', Rp02: 250, Rm: 410 },
+  'IS2062-E350': { label: 'IS 2062 E350 (Fe490)', Rp02: 350, Rm: 490 },
+  'IS2062-E410': { label: 'IS 2062 E410 (Fe540)', Rp02: 410, Rm: 540 },
+  'Custom':      { label: 'Custom',                Rp02: null, Rm: null },
 };
 
 function hcCalc(inp) {
-  const G_N = 9.81, E_STEEL = 210000, RHO = 7.85e-6;
-  const FRIC_PEAK = 2.3, SF_PROOF = 1.7, OVERP = 1.4, BUCK_SF = 2.0;
-  const E0_CYL = 1.0, E0_RAM = 0.5;
+  var G_N = 9.81, E_STEEL = 210000, RHO = 7.85e-6;
+  var FRIC_PEAK = 2.3, SF_PROOF = 1.7, OVERP = 1.4, BUCK_SF = 2.0;
+  var E0_CYL = 1.0, E0_RAM = 0.5;
 
-  const { d_ram, e_wall_ram, D_o_cyl, e_wall_cyl, cabin_travel, P_car, Q_rated, Rp02, Rm } = inp;
-  const solid = (e_wall_ram === 0 || e_wall_ram >= d_ram / 2);
+  var d_ram = inp.d_ram, e_wall_ram = inp.e_wall_ram;
+  var D_o_cyl = inp.D_o_cyl, e_wall_cyl = inp.e_wall_cyl;
+  var cabin_travel = inp.cabin_travel, P_car = inp.P_car, Q_rated = inp.Q_rated;
+  var Rp02 = inp.Rp02, Rm = inp.Rm;
+  var n_cyl = inp.n_cyl;                     // 1 or 2
+  var trans_ratio = inp.trans_ratio;         // 1 (1:1) or 2 (2:1)
 
-  const D_i     = D_o_cyl - 2 * e_wall_cyl;
-  const d_i_ram = solid ? 0 : d_ram - 2 * e_wall_ram;
+  var solid = (e_wall_ram === 0 || e_wall_ram >= d_ram / 2);
 
-  const A_bore = Math.PI / 4 * D_i * D_i;
-  const A_ram  = solid ? Math.PI / 4 * d_ram * d_ram
-                       : Math.PI / 4 * (d_ram * d_ram - d_i_ram * d_i_ram);
-  const J_ram  = solid ? Math.PI / 64 * Math.pow(d_ram, 4)
-                       : Math.PI / 64 * (Math.pow(d_ram, 4) - Math.pow(d_i_ram, 4));
-  const i_ram  = Math.sqrt(J_ram / A_ram);
+  // ── Dimensions ────────────────────────────────────────────────────────────
+  var D_i    = D_o_cyl - 2 * e_wall_cyl;
+  var d_i_ram = solid ? 0 : d_ram - 2 * e_wall_ram;
 
-  const p_static    = (P_car + Q_rated) * G_N / A_bore;
-  const p_max       = OVERP * p_static;
-  const p_burst_cyl = 2 * Rm * e_wall_cyl / D_i;
+  // ── Cross-sections ─────────────────────────────────────────────────────────
+  var A_bore = Math.PI / 4 * D_i * D_i;
+  var A_ram  = solid ? Math.PI / 4 * d_ram * d_ram
+                     : Math.PI / 4 * (d_ram * d_ram - d_i_ram * d_i_ram);
+  var J_ram  = solid ? Math.PI / 64 * Math.pow(d_ram, 4)
+                     : Math.PI / 64 * (Math.pow(d_ram, 4) - Math.pow(d_i_ram, 4));
+  var i_ram  = Math.sqrt(J_ram / A_ram);
 
-  const e_cyl_req   = (FRIC_PEAK * SF_PROOF * p_static / Rp02) * (D_i / 2) + E0_CYL;
-  const cyl_wall_ok = e_wall_cyl >= e_cyl_req;
+  // ── Load sharing and transmission ─────────────────────────────────────────
+  // Each cylinder carries (P+Q)/n_cyl.
+  // Each ram in a 2:1 system only supports half that load and travels half the distance.
+  var load_per_cyl  = (P_car + Q_rated) / n_cyl;    // kg — load each cylinder must lift
+  var ram_axial_kg  = load_per_cyl / trans_ratio;    // kg — axial load on each ram
 
-  let e_ram_req = null, ram_wall_ok = true;
+  // ── Pressure (per cylinder) ─────────────────────────────────────────────
+  var p_static = ram_axial_kg * G_N / A_bore;        // MPa = N/mm²
+  var p_max    = OVERP * p_static;
+  var p_burst  = 2 * Rm * e_wall_cyl / D_i;
+
+  // ── Wall thickness — Formula 37 ───────────────────────────────────────────
+  var e_cyl_req   = (FRIC_PEAK * SF_PROOF * p_static / Rp02) * (D_i / 2) + E0_CYL;
+  var cyl_wall_ok = e_wall_cyl >= e_cyl_req;
+
+  var e_ram_req = null, ram_wall_ok = true;
   if (!solid) {
     e_ram_req   = (FRIC_PEAK * SF_PROOF * p_static / Rp02) * (d_i_ram / 2) + E0_RAM;
     ram_wall_ok = e_wall_ram >= e_ram_req;
   }
 
-  const m_ram    = A_ram * cabin_travel * RHO;
-  const l        = cabin_travel;
-  const lambda_n = l / i_ram;
+  // ── Buckling ───────────────────────────────────────────────────────────────
+  // Ram stroke = cabin_travel / trans_ratio  →  buckling length l = stroke
+  var l       = cabin_travel / trans_ratio;
+  var lam     = l / i_ram;
+  var m_ram   = A_ram * l * RHO;                     // kg (based on actual ram stroke)
 
-  let F_s_allow, buck_formula;
-  if (lambda_n >= 100) {
+  var F_s_allow, buck_formula;
+  if (lam >= 100) {
     F_s_allow   = Math.PI * Math.PI * E_STEEL * J_ram / (BUCK_SF * l * l);
     buck_formula = 51;
   } else {
-    F_s_allow   = (A_ram / BUCK_SF) * (Rm - (Rm - 210) * Math.pow(lambda_n / 100, 2));
+    F_s_allow   = (A_ram / BUCK_SF) * (Rm - (Rm - 210) * Math.pow(lam / 100, 2));
     buck_formula = 52;
   }
 
-  const F_s_actual = OVERP * G_N * ((P_car + Q_rated) + 0.64 * m_ram);
-  const SF_buck    = F_s_allow / F_s_actual;
-  const buck_ok    = F_s_actual <= F_s_allow;
+  // Formula 53: F_s = 1.4 × g × [c_m × (P+Q)/n_cyl + 0.64 × P_t]
+  //   c_m = 1/trans_ratio (fraction of load borne by one ram in the reeved system)
+  var F_s_actual = OVERP * G_N * (ram_axial_kg + 0.64 * m_ram);
+  var SF_buck    = F_s_allow / F_s_actual;
+  var buck_ok    = F_s_actual <= F_s_allow;
 
-  const burst_ratio = p_burst_cyl / p_max;
-  const burst_ok    = burst_ratio >= 2.5;
-  const all_pass    = cyl_wall_ok && ram_wall_ok && buck_ok;
+  var burst_ratio = p_burst / p_max;
+  var burst_ok    = burst_ratio >= 2.5;
+  var all_pass    = cyl_wall_ok && ram_wall_ok && buck_ok;
 
-  return { solid, D_i, d_i_ram, A_bore, A_ram, J_ram, i_ram,
-           p_static, p_max, p_burst_cyl, burst_ratio,
-           e_cyl_req, cyl_wall_ok, e_ram_req, ram_wall_ok,
-           m_ram, l, lambda_n, buck_formula, F_s_allow, F_s_actual, SF_buck, buck_ok,
-           burst_ok, all_pass };
+  return {
+    solid, D_i, d_i_ram, A_bore, A_ram, J_ram, i_ram,
+    load_per_cyl, ram_axial_kg,
+    p_static, p_max, p_burst, burst_ratio,
+    e_cyl_req, cyl_wall_ok, e_ram_req, ram_wall_ok,
+    m_ram, l, lam, buck_formula, F_s_allow, F_s_actual, SF_buck, buck_ok,
+    burst_ok, all_pass
+  };
 }
 </script>
 
-<!-- ═══════════════════ PDF REPORT GENERATOR ═══════════════════ -->
+<!-- ═══════════════ PDF REPORT GENERATOR ═══════════════ -->
 <script>
 function generateHydraulicPDF(meta, inp, res) {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-  const PW = doc.internal.pageSize.getWidth();
-  const PH = doc.internal.pageSize.getHeight();
-  const ML = 45, MR = PW - 45;
-  const BLUE = [11, 61, 145], DKGRAY = [40, 40, 40];
-  let y = 0;
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  var PW = doc.internal.pageSize.getWidth();
+  var PH = doc.internal.pageSize.getHeight();
+  var ML = 45, MR = PW - 45;
+  var BLUE = [11, 61, 145], DK = [40, 40, 40];
+  var y = 0;
 
   function fN(n, d) {
-    d = d === undefined ? 3 : d;
+    if (d === undefined) d = 3;
     if (n === null || n === undefined || isNaN(n)) return '-';
     return (+n).toFixed(d);
   }
-  function fkN(n) { return fN(n / 1000, 2) + ' kN'; }
+  function fkN(n)  { return fN(n / 1000, 2) + ' kN'; }
   function fMPa(n) { return fN(n, 3) + ' MPa'; }
 
   function hline(yy, col) {
     col = col || [200, 200, 200];
-    doc.setDrawColor(col[0], col[1], col[2]);
-    doc.setLineWidth(0.5);
-    doc.line(ML, yy, MR, yy);
+    doc.setDrawColor(col[0], col[1], col[2]); doc.setLineWidth(0.5); doc.line(ML, yy, MR, yy);
   }
-
-  function secTitle(title) {
+  function sec(title) {
     y += 14;
-    doc.setFillColor(230, 237, 255);
-    doc.rect(ML, y - 11, MR - ML, 16, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
+    doc.setFillColor(230, 237, 255); doc.rect(ML, y - 11, MR - ML, 16, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
     doc.setTextColor(BLUE[0], BLUE[1], BLUE[2]);
-    doc.text(title.toUpperCase(), ML + 4, y);
-    y += 8;
-    doc.setTextColor(DKGRAY[0], DKGRAY[1], DKGRAY[2]);
+    doc.text(title.toUpperCase(), ML + 4, y); y += 8;
+    doc.setTextColor(DK[0], DK[1], DK[2]);
   }
-
-  function twoCol(label, value) {
+  function two(label, value) {
     y += 14;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(DKGRAY[0], DKGRAY[1], DKGRAY[2]);
-    doc.text(label, ML + 4, y);
-    doc.setFont('helvetica', 'bold');
-    doc.text(String(value), ML + 230, y);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+    doc.setTextColor(DK[0], DK[1], DK[2]); doc.text(label, ML + 4, y);
+    doc.setFont('helvetica', 'bold'); doc.text(String(value), ML + 240, y);
     doc.setFont('helvetica', 'normal');
   }
-
-  function rowCheck(label, value, ok) {
+  function rowck(label, value, ok) {
     y += 14;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(DKGRAY[0], DKGRAY[1], DKGRAY[2]);
-    doc.text(label, ML + 4, y);
-    doc.setFont('helvetica', 'bold');
-    doc.text(String(value), ML + 230, y);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+    doc.setTextColor(DK[0], DK[1], DK[2]); doc.text(label, ML + 4, y);
+    doc.setFont('helvetica', 'bold'); doc.text(String(value), ML + 240, y);
     var c = ok ? [22, 163, 74] : [220, 38, 38];
     doc.setFillColor(c[0], c[1], c[2]);
-    doc.roundedRect(MR - 62, y - 9, 52, 12, 3, 3, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(8);
-    doc.text(ok ? 'PASS' : 'FAIL', MR - 36, y - 1, { align: 'center' });
-    doc.setFontSize(9);
-    doc.setTextColor(DKGRAY[0], DKGRAY[1], DKGRAY[2]);
-    doc.setFont('helvetica', 'normal');
+    doc.roundedRect(MR - 58, y - 9, 48, 12, 3, 3, 'F');
+    doc.setTextColor(255, 255, 255); doc.setFontSize(8);
+    doc.text(ok ? 'PASS' : 'FAIL', MR - 34, y - 1, { align: 'center' });
+    doc.setFontSize(9); doc.setTextColor(DK[0], DK[1], DK[2]); doc.setFont('helvetica', 'normal');
   }
-
   function footer() {
     var pg = doc.internal.getCurrentPageInfo().pageNumber;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(130, 130, 130);
+    // Diamond polish note — left side, two lines
+    doc.text('Portal Engineering Limited  |  Your Engineering Excellence Partners', ML, PH - 28);
+    doc.setFont('helvetica', 'italic');
+    doc.text('Pistons are Diamond Polished  -  Ra Value < 0.2 Microns', ML, PH - 17);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
-    doc.setTextColor(130, 130, 130);
-    doc.text('Portal Engineering Private Limited  -  IS 17900 (Part 2): 2022', ML, PH - 20);
-    doc.text('Page ' + pg, MR, PH - 20, { align: 'right' });
-    doc.text('For design verification purposes only.', PW / 2, PH - 20, { align: 'center' });
+    doc.text('Page ' + pg, MR, PH - 22, { align: 'right' });
+    doc.text('IS 17900 (Part 2): 2022', MR, PH - 12, { align: 'right' });
+    // divider line
+    doc.setDrawColor(200, 200, 200); doc.setLineWidth(0.3); doc.line(ML, PH - 35, MR, PH - 35);
   }
+  function newPage() { doc.addPage(); footer(); y = 55; hline(y - 5, BLUE); }
 
-  function newPage() {
-    doc.addPage(); footer(); y = 55;
-    hline(y - 5, BLUE);
-  }
-
-  // PAGE 1
-  doc.setFillColor(BLUE[0], BLUE[1], BLUE[2]);
-  doc.rect(0, 0, PW, 68, 'F');
-  doc.setFillColor(255, 255, 255);
-  doc.circle(ML + 18, 34, 18, 'F');
-  doc.setTextColor(BLUE[0], BLUE[1], BLUE[2]);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(20);
+  // ── PAGE 1 ────────────────────────────────────────────────────────────────
+  doc.setFillColor(BLUE[0], BLUE[1], BLUE[2]); doc.rect(0, 0, PW, 68, 'F');
+  doc.setFillColor(255, 255, 255); doc.circle(ML + 18, 34, 18, 'F');
+  doc.setTextColor(BLUE[0], BLUE[1], BLUE[2]); doc.setFont('helvetica', 'bold'); doc.setFontSize(20);
   doc.text('P', ML + 18, 40, { align: 'center' });
   doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(15);
-  doc.text('Portal Engineering Private Limited', ML + 44, 28);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9.5);
-  doc.text('Hydraulic Cylinder Design Datasheet  -  IS 17900 (Part 2): 2022', ML + 44, 44);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
+  doc.text('Portal Engineering Limited', ML + 44, 26);
+  doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5);
+  doc.text('Your Engineering Excellence Partners', ML + 44, 38);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
+  doc.text('Hydraulic Cylinder Design Datasheet  -  IS 17900 (Part 2): 2022', ML + 44, 51);
   doc.setFontSize(8);
-  doc.text('Generated: ' + new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }), ML + 44, 58);
+  doc.setFontSize(7.5);
+  doc.text('Generated: ' + new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }), ML + 44, 62);
 
   var bc = res.all_pass ? [22, 163, 74] : [220, 38, 38];
-  doc.setFillColor(bc[0], bc[1], bc[2]);
-  doc.roundedRect(MR - 105, 20, 100, 28, 5, 5, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
+  doc.setFillColor(bc[0], bc[1], bc[2]); doc.roundedRect(MR - 105, 20, 100, 28, 5, 5, 'F');
+  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
   doc.text(res.all_pass ? 'DESIGN SAFE' : 'DESIGN UNSAFE', MR - 55, 40, { align: 'center' });
 
   y = 85;
-  secTitle('Project Details');
-  [
-    ['Project Name',   meta.project  || '-'],
-    ['Project Number', meta.projNo   || '-'],
-    ['Client',         meta.client   || '-'],
-    ['Engineer',       meta.engineer || '-'],
-    ['Date',           meta.date     || new Date().toLocaleDateString('en-IN')],
-    ['Standard',       'IS 17900 (Part 2): 2022'],
-  ].forEach(function(r) { twoCol(r[0], r[1]); });
+  sec('Project Details');
+  [['Project Name', meta.project || '-'], ['Project Number', meta.projNo || '-'],
+   ['Client', meta.client || '-'], ['Engineer', meta.engineer || '-'],
+   ['Date', meta.date || new Date().toLocaleDateString('en-IN')],
+   ['Standard', 'IS 17900 (Part 2): 2022']
+  ].forEach(function(r) { two(r[0], r[1]); });
 
-  secTitle('Input Parameters');
-  twoCol('Cylinder outer diameter (D_o)',  inp.D_o_cyl + ' mm');
-  twoCol('Cylinder wall thickness (e_wall)', inp.e_wall_cyl + ' mm');
-  twoCol('Cylinder bore (D_i)',            fN(res.D_i, 1) + ' mm');
-  twoCol('Ram outer diameter (d)',         inp.d_ram + ' mm');
-  twoCol('Ram type',                       res.solid ? 'Solid' : 'Hollow');
-  if (!res.solid) twoCol('Ram wall thickness (e_wall_ram)', inp.e_wall_ram + ' mm');
-  twoCol('Cabin travel (l)',               inp.cabin_travel + ' mm');
-  twoCol('Empty car mass (P)',             inp.P_car + ' kg');
-  twoCol('Rated load (Q)',                 inp.Q_rated + ' kg');
-  twoCol('Material',                       inp.materialLabel || '-');
-  twoCol('Proof stress R_p0.2',           inp.Rp02 + ' N/mm2');
-  twoCol('Tensile strength R_m',          inp.Rm + ' N/mm2');
+  sec('System Configuration');
+  two('Number of cylinders', inp.n_cyl);
+  two('Transmission ratio', inp.trans_ratio === 1 ? '1:1 (Direct acting)' : '2:1 (Roped / indirect)');
+  two('Ram stroke (l = cabin travel / ratio)', fN(res.l, 0) + ' mm');
+  two('Load per cylinder', fN(res.load_per_cyl, 1) + ' kg  (' + (inp.n_cyl > 1 ? 'shared equally' : 'single cylinder') + ')');
+  two('Axial load per ram', fN(res.ram_axial_kg, 1) + ' kg  (after reeving)');
 
-  secTitle('Pressure Analysis');
-  twoCol('Bore area (A)',                      fN(res.A_bore, 0) + ' mm2');
-  twoCol('Static working pressure (p)',         fMPa(res.p_static));
-  twoCol('Max pressure (1.4 x p) [Formula 53]', fMPa(res.p_max));
-  twoCol('Burst pressure - Barlow (2xRmxe/Di)', fMPa(res.p_burst_cyl));
-  twoCol('Burst ratio (p_burst / p_max)',       fN(res.burst_ratio, 2) + (res.burst_ok ? '  [>= 2.5 OK]' : '  [< 2.5 FAIL]'));
+  sec('Input Parameters');
+  two('Cylinder outer diameter (D_o)',   inp.D_o_cyl + ' mm');
+  two('Cylinder wall thickness (e_wall)', inp.e_wall_cyl + ' mm');
+  two('Cylinder bore (D_i)',             fN(res.D_i, 1) + ' mm');
+  two('Ram outer diameter (d)',          inp.d_ram + ' mm');
+  two('Ram type',                        res.solid ? 'Solid' : 'Hollow');
+  if (!res.solid) two('Ram wall thickness (e_wall_ram)', inp.e_wall_ram + ' mm');
+  two('Cabin travel',                    inp.cabin_travel + ' mm');
+  two('Empty car mass (P)',              inp.P_car + ' kg');
+  two('Rated load (Q)',                  inp.Q_rated + ' kg');
+  two('Total load (P + Q)',              (inp.P_car + inp.Q_rated) + ' kg');
+  two('Material',                        inp.materialLabel || '-');
+  two('Proof stress R_p0.2',            inp.Rp02 + ' N/mm2');
+  two('Tensile strength R_m',           inp.Rm + ' N/mm2');
+
+  sec('Pressure Analysis (per cylinder, per ram)');
+  two('Bore area (A)',                         fN(res.A_bore, 0) + ' mm2');
+  two('Static working pressure (p)',            fMPa(res.p_static));
+  two('Max pressure (1.4 x p) [Formula 53]',  fMPa(res.p_max));
+  two('Burst pressure - Barlow (2xRmxe/Di)',  fMPa(res.p_burst));
+  two('Burst ratio (p_burst / p_max)',         fN(res.burst_ratio, 2) + (res.burst_ok ? '  [>= 2.5 OK]' : '  [< 2.5 FAIL]'));
 
   footer();
 
-  // PAGE 2
+  // ── PAGE 2 ────────────────────────────────────────────────────────────────
   newPage();
 
-  secTitle('Cylinder Wall Thickness Check  [IS 17900 Formula 37]');
-  twoCol('Formula', 'e_wall >= (2.3 x 1.7 x p / R_p0.2) x (D_i/2) + e0');
-  twoCol('e0 (corrosion allowance)', '1.0 mm');
-  twoCol('Required wall thickness (e_req)', fN(res.e_cyl_req, 2) + ' mm');
-  rowCheck('Provided wall thickness (e_wall)', inp.e_wall_cyl + ' mm', res.cyl_wall_ok);
+  sec('Cylinder Wall Thickness Check  [IS 17900 Formula 37]');
+  two('Formula', 'e_wall >= (2.3 x 1.7 x p / R_p0.2) x (D_i/2) + e0');
+  two('e0 (corrosion allowance)', '1.0 mm');
+  two('Required wall thickness (e_req)', fN(res.e_cyl_req, 2) + ' mm');
+  rowck('Provided wall thickness (e_wall)', inp.e_wall_cyl + ' mm', res.cyl_wall_ok);
 
   if (!res.solid) {
-    secTitle('Ram Wall Thickness Check  [IS 17900 Formula 37]');
-    twoCol('e0 (corrosion allowance for rams)', '0.5 mm');
-    twoCol('Required ram wall (e_req)', fN(res.e_ram_req, 2) + ' mm');
-    rowCheck('Provided ram wall (e_wall_ram)', inp.e_wall_ram + ' mm', res.ram_wall_ok);
+    sec('Ram Wall Thickness Check  [IS 17900 Formula 37]');
+    two('e0 (corrosion allowance for rams)', '0.5 mm');
+    two('Required ram wall (e_req)', fN(res.e_ram_req, 2) + ' mm');
+    rowck('Provided ram wall (e_wall_ram)', inp.e_wall_ram + ' mm', res.ram_wall_ok);
   }
 
-  secTitle('Buckling Analysis  [IS 17900 Section 5.13.2, Formula ' + res.buck_formula + ' & 53]');
-  twoCol('Ram cross-section area (A_n)',       fN(res.A_ram, 1) + ' mm2');
-  twoCol('Second moment of area (J_n)',         fN(res.J_ram / 1e6, 4) + ' x 10^6 mm4');
-  twoCol('Radius of gyration (i_n)',            fN(res.i_ram, 2) + ' mm');
-  twoCol('Free buckling length (l)',            res.l + ' mm');
-  twoCol('Slenderness ratio (lambda_n = l/i_n)', fN(res.lambda_n, 1));
-  twoCol('Applicable formula', res.lambda_n >= 100 ? 'Formula 51 (Euler, lambda >= 100)' : 'Formula 52 (Johnson parabolic, lambda < 100)');
-  twoCol('Ram mass estimate (P_t)',             fN(res.m_ram, 1) + ' kg');
-  twoCol('Allowable buckling force (F_s_allow)', fkN(res.F_s_allow));
-  rowCheck('Actual buckling force (F_s - Formula 53)', fkN(res.F_s_actual), res.buck_ok);
-  twoCol('Safety factor (F_s_allow / F_s_actual)', fN(res.SF_buck, 2) + '  (required >= 2.0)');
+  sec('Buckling Analysis  [IS 17900 Sec 5.13.2, Formula ' + res.buck_formula + ' & 53]');
+  two('Ram cross-section area (A_n)',          fN(res.A_ram, 1) + ' mm2');
+  two('Second moment of area (J_n)',            fN(res.J_ram / 1e6, 4) + ' x 10^6 mm4');
+  two('Radius of gyration (i_n)',               fN(res.i_ram, 2) + ' mm');
+  two('Ram stroke / buckling length (l)',       fN(res.l, 0) + ' mm');
+  two('Slenderness ratio (lambda = l / i_n)',   fN(res.lam, 1));
+  two('Applicable formula',                     res.lam >= 100 ? 'Formula 51 (Euler, lambda >= 100)' : 'Formula 52 (Johnson parabolic, lambda < 100)');
+  two('Ram mass estimate (P_t)',                fN(res.m_ram, 1) + ' kg');
+  two('Allowable buckling force (F_s_allow)',   fkN(res.F_s_allow));
+  rowck('Actual buckling force (F_s - Formula 53)', fkN(res.F_s_actual), res.buck_ok);
+  two('Safety factor (F_s_allow / F_s_actual)', fN(res.SF_buck, 2) + '  (required >= 2.0)');
 
   // Summary box
-  y += 20;
+  y += 18;
   var BH = 72;
   var sc = res.all_pass ? [240, 253, 244] : [254, 242, 242];
   var bc2 = res.all_pass ? [22, 163, 74] : [220, 38, 38];
-  doc.setFillColor(sc[0], sc[1], sc[2]);
-  doc.setDrawColor(bc2[0], bc2[1], bc2[2]);
-  doc.setLineWidth(1.5);
-  doc.roundedRect(ML, y, MR - ML, BH, 6, 6, 'FD');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
+  doc.setFillColor(sc[0], sc[1], sc[2]); doc.setDrawColor(bc2[0], bc2[1], bc2[2]);
+  doc.setLineWidth(1.5); doc.roundedRect(ML, y, MR - ML, BH, 6, 6, 'FD');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
   doc.setTextColor(bc2[0], bc2[1], bc2[2]);
   doc.text(res.all_pass ? 'DESIGN IS SAFE AS PER IS 17900 (PART 2): 2022'
                         : 'DESIGN DOES NOT SATISFY IS 17900 (PART 2): 2022',
@@ -584,55 +619,35 @@ function generateHydraulicPDF(meta, inp, res) {
     { label: 'Buckling',      ok: res.buck_ok },
     { label: 'Burst Ratio',   ok: res.burst_ok },
   ].filter(function(c) { return !c.skip; });
-
   var sp = (MR - ML) / chks.length;
   chks.forEach(function(c, i) {
     var cx = ML + sp * i + sp / 2;
     var cc = c.ok ? [22, 163, 74] : [220, 38, 38];
-    doc.setFillColor(cc[0], cc[1], cc[2]);
-    doc.roundedRect(cx - 42, y + 34, 84, 14, 3, 3, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
+    doc.setFillColor(cc[0], cc[1], cc[2]); doc.roundedRect(cx - 42, y + 34, 84, 14, 3, 3, 'F');
+    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
     doc.text((c.ok ? '[PASS] ' : '[FAIL] ') + c.label, cx, y + 44, { align: 'center' });
-    doc.setTextColor(DKGRAY[0], DKGRAY[1], DKGRAY[2]);
+    doc.setTextColor(DK[0], DK[1], DK[2]);
   });
   y += BH + 16;
 
-  // Notes
-  secTitle('Notes');
-  [
-    '1. Ram mass uses cabin travel as extended length; actual ram length may differ.',
-    '2. Buckling length l = cabin travel (conservative, pin-pin end conditions assumed).',
-    '3. Fig. 10 graphical safety factor (S1 vs Dt/dr) should be verified separately by the engineer.',
-    '4. Welding seam stress-relief checks (Formulae 38-43) apply where seams are present.',
-    '5. This datasheet must be reviewed by a qualified engineer before use in construction.',
+  sec('Notes');
+  ['1. All calculations are per-cylinder and per-ram (load already divided by n_cyl and trans ratio).',
+   '2. Buckling length l = cabin travel / transmission ratio (ram stroke).',
+   '3. Ram mass uses ram stroke as the extended length; actual may differ slightly.',
+   '4. Fig. 10 graphical safety factor (S1 vs Dt/dr) should be verified separately by the engineer.',
+   '5. Welding seam stress-relief checks (Formulae 38-43) apply where seams are present.',
+   '6. This datasheet must be reviewed by a qualified engineer before use in construction.',
   ].forEach(function(n) {
-    y += 12;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(80, 80, 80);
-    doc.text(n, ML + 4, y);
+    y += 12; doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+    doc.setTextColor(80, 80, 80); doc.text(n, ML + 4, y);
   });
 
-  // Signature block
-  y += 28;
-  hline(y, [180, 180, 180]);
-  y += 14;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
-  doc.setTextColor(DKGRAY[0], DKGRAY[1], DKGRAY[2]);
-  doc.text('Prepared by:', ML + 4, y);
-  doc.text('Checked by:', ML + 180, y);
-  doc.text('Approved by:', ML + 360, y);
+  y += 26; hline(y, [180, 180, 180]); y += 14;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(DK[0], DK[1], DK[2]);
+  doc.text('Prepared by:', ML + 4, y); doc.text('Checked by:', ML + 180, y); doc.text('Approved by:', ML + 360, y);
   y += 30;
-  doc.text('_____________________', ML + 4, y);
-  doc.text('_____________________', ML + 180, y);
-  doc.text('_____________________', ML + 360, y);
-  y += 12;
-  doc.text(meta.engineer || '', ML + 4, y);
-  doc.text('Date: _____________', ML + 180, y);
-  doc.text('Date: _____________', ML + 360, y);
+  doc.text('_____________________', ML + 4, y); doc.text('_____________________', ML + 180, y); doc.text('_____________________', ML + 360, y);
+  y += 12; doc.text(meta.engineer || '', ML + 4, y); doc.text('Date: _____________', ML + 180, y); doc.text('Date: _____________', ML + 360, y);
 
   footer();
 
@@ -641,35 +656,43 @@ function generateHydraulicPDF(meta, inp, res) {
 }
 </script>
 
-<!-- ═══════════════════ UI CONTROLLER ═══════════════════ -->
+<!-- ═══════════════ UI CONTROLLER ═══════════════ -->
 <script>
 var _meta = null, _inp = null, _res = null;
 
-// Set today's date
 document.getElementById('projDate').value = new Date().toLocaleDateString('en-IN');
 
-// ── Radio toggle (hollow / solid) ──────────────────────────────────────────
-document.querySelectorAll('input[name=ramType]').forEach(function(radio) {
-  radio.addEventListener('change', function() {
-    var hollow = this.value === 'hollow';
-    document.getElementById('hollowWallRow').style.display = hollow ? 'block' : 'none';
-    document.getElementById('optSolid').classList.toggle('active', !hollow);
-    document.getElementById('optHollow').classList.toggle('active', hollow);
+// ── Generic radio toggle wiring ────────────────────────────────────────────
+function wireRadio(name, optIds, onChange) {
+  var opts = document.querySelectorAll('input[name=' + name + ']');
+  function sync() {
+    var val = document.querySelector('input[name=' + name + ']:checked').value;
+    optIds.forEach(function(id, i) {
+      var el = document.getElementById(id);
+      if (el) el.classList.toggle('active', opts[i].value === val);
+    });
+    if (onChange) onChange(val);
+  }
+  opts.forEach(function(r) { r.addEventListener('change', sync); });
+  optIds.forEach(function(id, i) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('click', function() {
+      opts[i].checked = true; sync();
+    });
   });
+}
+
+// Hollow/solid
+wireRadio('ramType', ['optSolid', 'optHollow'], function(val) {
+  document.getElementById('hollowWallRow').style.display = val === 'hollow' ? 'block' : 'none';
 });
-// Also toggle on label click
-document.getElementById('optSolid').addEventListener('click', function() {
-  document.querySelector('input[name=ramType][value=solid]').checked = true;
-  document.getElementById('hollowWallRow').style.display = 'none';
-  document.getElementById('optSolid').classList.add('active');
-  document.getElementById('optHollow').classList.remove('active');
-});
-document.getElementById('optHollow').addEventListener('click', function() {
-  document.querySelector('input[name=ramType][value=hollow]').checked = true;
-  document.getElementById('hollowWallRow').style.display = 'block';
-  document.getElementById('optHollow').classList.add('active');
-  document.getElementById('optSolid').classList.remove('active');
-});
+
+// Cylinders
+wireRadio('nCyl', ['opt1cyl', 'opt2cyl']);
+
+// Transmission
+wireRadio('trans', ['opt11', 'opt21']);
 
 function toggleMaterial() {
   var custom = document.getElementById('material').value === 'Custom';
@@ -686,12 +709,12 @@ function fN(n, d) {
 function badge(ok) {
   return '<span class="badge ' + (ok ? 'pass">&#10004; PASS' : 'fail">&#10008; FAIL') + '</span>';
 }
-function fillTable(tbodyId, rows) {
+function fillTable(id, rows) {
   var html = '';
   rows.forEach(function(r) {
     html += '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td><td>' + (r[2] !== undefined ? badge(r[2]) : '') + '</td></tr>';
   });
-  document.getElementById(tbodyId).innerHTML = html;
+  document.getElementById(id).innerHTML = html;
 }
 
 // ── Main calculation ───────────────────────────────────────────────────────
@@ -707,17 +730,19 @@ function runCalc() {
   var travel  = parseFloat(document.getElementById('travel').value);
   var carMass = parseFloat(document.getElementById('carMass').value);
   var cap     = parseFloat(document.getElementById('capacity').value);
+  var nCyl    = parseInt(document.querySelector('input[name=nCyl]:checked').value);
+  var trans   = document.querySelector('input[name=trans]:checked').value; // '1:1' or '2:1'
+  var transR  = trans === '2:1' ? 2 : 1;
   var matKey  = document.getElementById('material').value;
   var matDef  = MATERIALS[matKey];
   var Rp02    = matKey === 'Custom' ? parseFloat(document.getElementById('customRp02').value) : matDef.Rp02;
   var Rm      = matKey === 'Custom' ? parseFloat(document.getElementById('customRm').value)   : matDef.Rm;
   var matLabel = matKey === 'Custom' ? 'Custom (Rp02=' + Rp02 + ', Rm=' + Rm + ')' : matDef.label;
 
-  // Validation
   var probs = [];
-  if (!cylOD || cylOD <= 0)  probs.push('Cylinder outer diameter is required.');
-  if (!cylWT || cylWT <= 0)  probs.push('Cylinder wall thickness is required.');
-  if (!ramOD || ramOD <= 0)  probs.push('Ram outer diameter is required.');
+  if (!cylOD || cylOD <= 0)   probs.push('Cylinder outer diameter is required.');
+  if (!cylWT || cylWT <= 0)   probs.push('Cylinder wall thickness is required.');
+  if (!ramOD || ramOD <= 0)   probs.push('Ram outer diameter is required.');
   if (hollow && (!ramWT || ramWT <= 0)) probs.push('Ram wall thickness is required for hollow ram.');
   if (!travel  || travel <= 0)  probs.push('Cabin travel is required.');
   if (!carMass || carMass <= 0) probs.push('Empty car mass is required.');
@@ -726,9 +751,12 @@ function runCalc() {
 
   var D_i = cylOD - 2 * cylWT;
   if (D_i <= 0) probs.push('Cylinder bore (D_o - 2 x e_wall) is zero or negative.');
-  if (cylOD && cylWT && ramOD && ramOD >= D_i) probs.push('Ram diameter (' + ramOD + ' mm) must be less than cylinder bore (' + fN(D_i, 1) + ' mm).');
-  if (hollow && ramWT && ramWT >= ramOD / 2) probs.push('Ram wall thickness exceeds half the ram diameter — use Solid type.');
-  if (Rp02 && Rm && Rp02 >= Rm) probs.push('Proof stress R_p0.2 must be less than tensile strength R_m.');
+  if (cylOD && cylWT && ramOD && ramOD >= D_i)
+    probs.push('Ram diameter (' + ramOD + ' mm) must be less than cylinder bore (' + fN(D_i, 1) + ' mm).');
+  if (hollow && ramWT && ramWT >= ramOD / 2)
+    probs.push('Ram wall thickness exceeds half ram diameter — use Solid type.');
+  if (Rp02 && Rm && Rp02 >= Rm)
+    probs.push('Proof stress R_p0.2 must be less than tensile strength R_m.');
 
   if (probs.length) {
     err.style.display = 'block';
@@ -737,35 +765,44 @@ function runCalc() {
   }
 
   var inp = { d_ram: ramOD, e_wall_ram: ramWT, D_o_cyl: cylOD, e_wall_cyl: cylWT,
-              cabin_travel: travel, P_car: carMass, Q_rated: cap, Rp02: Rp02, Rm: Rm, materialLabel: matLabel };
+              cabin_travel: travel, P_car: carMass, Q_rated: cap,
+              Rp02: Rp02, Rm: Rm, materialLabel: matLabel,
+              n_cyl: nCyl, trans_ratio: transR };
   var res = hcCalc(inp);
   _inp = inp; _res = res;
   _meta = {
-    project:  document.getElementById('projName').value,
-    projNo:   document.getElementById('projNo').value,
-    client:   document.getElementById('client').value,
+    project: document.getElementById('projName').value,
+    projNo:  document.getElementById('projNo').value,
+    client:  document.getElementById('client').value,
     engineer: document.getElementById('engineer').value,
-    date:     document.getElementById('projDate').value,
+    date:    document.getElementById('projDate').value,
   };
 
-  // Show results panel
+  // Show results
   document.getElementById('placeholder').style.display = 'none';
-  var panel = document.getElementById('results');
-  panel.style.display = 'block';
+  document.getElementById('results').style.display = 'block';
 
-  // Verdict banner
+  // Verdict
   var vb = document.getElementById('verdictBanner');
   vb.className = 'verdict-banner ' + (res.all_pass ? 'safe' : 'fail');
   vb.innerHTML = res.all_pass
     ? '&#10004;&ensp;Design is SAFE as per IS 17900 (Part 2): 2022'
     : '&#10008;&ensp;Design DOES NOT meet IS 17900 (Part 2): 2022 &mdash; see checks below';
 
+  // System config pills
+  document.getElementById('sysSummary').innerHTML =
+    '<span class="sys-pill">' + nCyl + ' Cylinder' + (nCyl > 1 ? 's' : '') + '</span>' +
+    '<span class="sys-pill">Transmission ' + trans + '</span>' +
+    '<span class="sys-pill">Ram stroke: ' + fN(res.l, 0) + ' mm</span>' +
+    '<span class="sys-pill">Load per ram: ' + fN(res.ram_axial_kg, 0) + ' kg</span>' +
+    '<span class="sys-pill">p = ' + fN(res.p_static, 2) + ' MPa</span>';
+
   // Quick-check cards
   var chks = [
-    { label: 'Cylinder Wall', sub: 'Required: ' + fN(res.e_cyl_req, 2) + ' mm &mdash; Provided: ' + cylWT + ' mm', ok: res.cyl_wall_ok },
-    { label: 'Ram Wall',      sub: res.solid ? 'Solid ram &mdash; N/A' : 'Required: ' + fN(res.e_ram_req, 2) + ' mm &mdash; Provided: ' + ramWT + ' mm', ok: res.ram_wall_ok },
-    { label: 'Buckling',      sub: 'SF = ' + fN(res.SF_buck, 2) + ' (required &ge; 2.0)', ok: res.buck_ok },
-    { label: 'Burst Ratio',   sub: fN(res.burst_ratio, 2) + ' (required &ge; 2.5)', ok: res.burst_ok },
+    { label: 'Cylinder Wall', sub: 'Req: ' + fN(res.e_cyl_req, 2) + ' mm &mdash; Got: ' + cylWT + ' mm', ok: res.cyl_wall_ok },
+    { label: 'Ram Wall',      sub: res.solid ? 'Solid &mdash; N/A' : 'Req: ' + fN(res.e_ram_req, 2) + ' mm &mdash; Got: ' + ramWT + ' mm', ok: res.ram_wall_ok },
+    { label: 'Buckling',      sub: 'SF = ' + fN(res.SF_buck, 2) + ' (req &ge; 2.0)', ok: res.buck_ok },
+    { label: 'Burst Ratio',   sub: fN(res.burst_ratio, 2) + ' (req &ge; 2.5)', ok: res.burst_ok },
   ];
   document.getElementById('checkGrid').innerHTML = chks.map(function(c) {
     return '<div class="check-item ' + (c.ok ? 'pass' : 'fail') + '">' +
@@ -776,44 +813,48 @@ function runCalc() {
 
   // Dimensions
   fillTable('dimTable', [
-    ['Cylinder bore diameter D<sub>i</sub>', fN(res.D_i, 1) + ' mm'],
-    ['Ram inner diameter d<sub>i</sub>',      res.solid ? 'Solid' : fN(res.d_i_ram, 1) + ' mm'],
-    ['Bore area A',                            fN(res.A_bore, 0) + ' mm&sup2;'],
-    ['Ram cross-section area A<sub>n</sub>',  fN(res.A_ram, 1) + ' mm&sup2;'],
-    ['Second moment of area J<sub>n</sub>',    fN(res.J_ram / 1e6, 4) + ' &times;10&sup6; mm&sup4;'],
-    ['Radius of gyration i<sub>n</sub>',       fN(res.i_ram, 2) + ' mm'],
+    ['Cylinder bore D<sub>i</sub>',                fN(res.D_i, 1) + ' mm'],
+    ['Ram inner diameter d<sub>i</sub>',            res.solid ? 'Solid' : fN(res.d_i_ram, 1) + ' mm'],
+    ['Bore area A',                                 fN(res.A_bore, 0) + ' mm&sup2;'],
+    ['Ram cross-section A<sub>n</sub>',             fN(res.A_ram, 1) + ' mm&sup2;'],
+    ['Second moment of area J<sub>n</sub>',         fN(res.J_ram / 1e6, 4) + ' &times;10&sup6; mm&sup4;'],
+    ['Radius of gyration i<sub>n</sub>',            fN(res.i_ram, 2) + ' mm'],
   ]);
 
   // Pressure
   fillTable('pressTable', [
-    ['Static working pressure p',             fN(res.p_static, 3) + ' MPa'],
-    ['Max pressure (1.4 &times; p)',           fN(res.p_max, 3) + ' MPa'],
-    ['Burst pressure &mdash; Barlow (2&sdot;R<sub>m</sub>&sdot;e/D<sub>i</sub>)', fN(res.p_burst_cyl, 2) + ' MPa'],
-    ['Burst ratio (p<sub>burst</sub> / p<sub>max</sub>)', fN(res.burst_ratio, 2) + ' &nbsp;&nbsp;' + (res.burst_ok ? '&#9989; &ge; 2.5' : '&#10060; &lt; 2.5'), res.burst_ok],
+    ['Total load P + Q',                             (carMass + cap) + ' kg'],
+    ['Load per cylinder  (&divide; ' + nCyl + ')',  fN(res.load_per_cyl, 1) + ' kg'],
+    ['Axial load per ram  (&divide; ' + transR + ')', fN(res.ram_axial_kg, 1) + ' kg'],
+    ['Static working pressure p',                    fN(res.p_static, 3) + ' MPa'],
+    ['Max pressure (1.4 &times; p)',                 fN(res.p_max, 3) + ' MPa'],
+    ['Burst pressure &mdash; Barlow',               fN(res.p_burst, 2) + ' MPa'],
+    ['Burst ratio (p<sub>burst</sub> / p<sub>max</sub>)', fN(res.burst_ratio, 2) + (res.burst_ok ? ' &nbsp;&#9989; &ge;2.5' : ' &nbsp;&#10060; &lt;2.5'), res.burst_ok],
   ]);
 
   // Wall thickness
-  var wrows = [
-    ['Cylinder &mdash; required e<sub>wall</sub> (Formula 37)', fN(res.e_cyl_req, 2) + ' mm'],
-    ['Cylinder &mdash; provided e<sub>wall</sub>',              cylWT + ' mm', res.cyl_wall_ok],
+  var wr = [
+    ['Cylinder &mdash; required e<sub>wall</sub>', fN(res.e_cyl_req, 2) + ' mm'],
+    ['Cylinder &mdash; provided e<sub>wall</sub>', cylWT + ' mm', res.cyl_wall_ok],
   ];
   if (!res.solid) {
-    wrows.push(['Ram &mdash; required e<sub>wall</sub> (Formula 37)', fN(res.e_ram_req, 2) + ' mm']);
-    wrows.push(['Ram &mdash; provided e<sub>wall</sub>',              ramWT + ' mm', res.ram_wall_ok]);
+    wr.push(['Ram &mdash; required e<sub>wall</sub>', fN(res.e_ram_req, 2) + ' mm']);
+    wr.push(['Ram &mdash; provided e<sub>wall</sub>', ramWT + ' mm', res.ram_wall_ok]);
   } else {
-    wrows.push(['Ram &mdash; solid section', 'Wall check N/A']);
+    wr.push(['Ram &mdash; solid section', 'N/A']);
   }
-  fillTable('wallTable', wrows);
+  fillTable('wallTable', wr);
 
   // Buckling
-  document.getElementById('buckRef').textContent = res.lambda_n >= 100 ? 'Formula 51 (Euler)' : 'Formula 52 (Johnson)';
+  document.getElementById('buckRef').textContent = res.lam >= 100 ? 'Formula 51 (Euler)' : 'Formula 52 (Johnson)';
   fillTable('buckTable', [
-    ['Ram mass estimate P<sub>t</sub>',               fN(res.m_ram, 1) + ' kg'],
-    ['Slenderness ratio &lambda;<sub>n</sub> = l / i<sub>n</sub>', fN(res.lambda_n, 1)],
-    ['Applicable formula', res.lambda_n >= 100 ? 'Formula 51 (Euler &mdash; &lambda; &ge; 100)' : 'Formula 52 (Johnson &mdash; &lambda; &lt; 100)'],
-    ['Allowable buckling force F<sub>s,allow</sub>',  fN(res.F_s_allow / 1000, 2) + ' kN'],
-    ['Actual buckling force F<sub>s</sub> (Formula 53)', fN(res.F_s_actual / 1000, 2) + ' kN', res.buck_ok],
-    ['Safety factor (F<sub>s,allow</sub> / F<sub>s,actual</sub>)', fN(res.SF_buck, 2) + ' &nbsp;(required &ge; 2.0)'],
+    ['Ram stroke / buckling length l',              fN(res.l, 0) + ' mm  (= ' + travel + ' / ' + transR + ')'],
+    ['Ram mass estimate P<sub>t</sub>',             fN(res.m_ram, 1) + ' kg'],
+    ['Slenderness ratio &lambda;<sub>n</sub>',      fN(res.lam, 1)],
+    ['Formula applied',                             res.lam >= 100 ? 'Formula 51 (Euler, &lambda; &ge; 100)' : 'Formula 52 (Johnson, &lambda; &lt; 100)'],
+    ['Allowable buckling force F<sub>s,allow</sub>', fN(res.F_s_allow / 1000, 2) + ' kN'],
+    ['Actual buckling force F<sub>s</sub>',          fN(res.F_s_actual / 1000, 2) + ' kN', res.buck_ok],
+    ['Safety factor',                               fN(res.SF_buck, 2) + ' &nbsp;(required &ge; 2.0)'],
   ]);
 
   document.getElementById('pdfBtn').disabled = false;
